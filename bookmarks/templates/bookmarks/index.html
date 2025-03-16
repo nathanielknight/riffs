@@ -1,34 +1,50 @@
 {% extends "base.html" %}
 
+
 {% block head %}
 <title>Bookmarks</title>
-<div class="pagination">
-    {% if bookmarks_page.has_previous %}
-        <a href="?page={{ bookmarks_page.previous_page_number }}" class="page-link">Previous</a>
-    {% else %}
-        <span class="page-link disabled">Previous</span>
-    {% endif %}
-    
-    <span class="current-page">
-        Page {{ bookmarks_page.number }} of {{ bookmarks_page.paginator.num_pages }}
-    </span>
-    
-    {% if bookmarks_page.has_next %}
-        <a href="?page={{ bookmarks_page.next_page_number }}" class="page-link">Next</a>
-    {% else %}
-        <span class="page-link disabled">Next</span>
-    {% endif %}
-</div>
+<style>
+    .bookmarks {
+        margin: 1em 0;
+        display: flex;
+        flex-direction: row;
+    }
+
+    .bookmark {
+        display: inline-block;
+        border: 1px solid black;
+        border-radius: 0.5em;
+        padding: 0.5em;
+        margin: 0.5em;
+        width: 12em;
+    }
+</style>
 {% endblock %}
 
 {% block main %}
 <h1>Bookmarks</h1>
 
-{% for bookmark in bookmarks_page.object_list %}
-<div class="bookmark">
-    <div>{{bookmark.name}}</div>
-    <div><a href="{% url 'bookmarks:bookmark' bookmark.id %}">details</a> <a href="{{bookmark.url}}">open</a></div>
+<div class="bookmarks">
+    {% for bookmark in bookmarks_page.object_list %}
+    <div class="bookmark">
+        <div>{{bookmark.name}}</div>
+        <div><a href="{% url 'bookmarks:bookmark' bookmark.id %}">details</a> <a href="{{bookmark.url}}">open</a></div>
+    </div>
+    {% endfor %}
 </div>
-{% endfor %}
+
+<div class="pagination">
+    {% if bookmarks_page.has_previous %}
+    <a href="?page={{ bookmarks_page.previous_page_number }}" class="page-link">Previous</a>
+    {% endif %}
+
+    <span class="current-page">
+        Page {{ bookmarks_page.number }} of {{ bookmarks_page.paginator.num_pages }}
+    </span>
+
+    {% if bookmarks_page.has_next %}
+    <a href="?page={{ bookmarks_page.next_page_number }}" class="page-link">Next</a>
+    {% endif %}
+</div>
 
 {% endblock %}
