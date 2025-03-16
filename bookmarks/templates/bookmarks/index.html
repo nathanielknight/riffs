@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Bookmarks</title>
+{% endblock %}
+
+{% block main %}
+<h1>Bookmarks</h1>
+
+{% for bookmark in bookmarks_page.object_list %}
+<div class="bookmark">
+    <div>{{bookmark.name}}</div>
+    <div><a href="{% url 'bookmarks:bookmark' bookmark.id %}">details</a> <a href="{{bookmark.url}}">open</a></div>
+</div>
+{% endfor %}
+
+{% endblock %}
