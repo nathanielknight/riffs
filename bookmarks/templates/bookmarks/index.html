@@ -2,6 +2,23 @@
 
 {% block head %}
 <title>Bookmarks</title>
+<div class="pagination">
+    {% if bookmarks_page.has_previous %}
+        <a href="?page={{ bookmarks_page.previous_page_number }}" class="page-link">Previous</a>
+    {% else %}
+        <span class="page-link disabled">Previous</span>
+    {% endif %}
+    
+    <span class="current-page">
+        Page {{ bookmarks_page.number }} of {{ bookmarks_page.paginator.num_pages }}
+    </span>
+    
+    {% if bookmarks_page.has_next %}
+        <a href="?page={{ bookmarks_page.next_page_number }}" class="page-link">Next</a>
+    {% else %}
+        <span class="page-link disabled">Next</span>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block main %}
