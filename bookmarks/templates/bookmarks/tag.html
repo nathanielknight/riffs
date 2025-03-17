@@ -1,0 +1,14 @@
+{% extends "bookmarks/base.html" %}
+
+{% block main %}
+<h1>{{tag.name}}</h1>
+
+<p>{{count}} bookmarks</p>
+
+<div class="bookmarks">
+    {% for bookmark in bookmarks %}
+    {% include "bookmarks/_bookmark_card.html" %}
+    {% endfor %}
+</div>
+
+{% endblock %}

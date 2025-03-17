@@ -1,8 +1,10 @@
+from django.db.models import Count
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponseNotAllowed
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 import django.forms as forms
+from taggit.models import Tag
 
 from .models import Bookmark
 
@@ -23,23 +25,36 @@ class NewBookmarkForm(forms.ModelForm):
         fields = ["name", "url", "notes", "tags"]
 
 
-def get_index(req):
-    bookmarks = Bookmark.objects.all()
+def bookmark_context(req):
+    bookmarks = Bookmark.objects.all().order_by("-created_at")
     paginator = Paginator(bookmarks, 50)
     page_number = req.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    return render(req, "bookmarks/index.html", {"bookmarks_page": page_obj})
+    new_bookmark_form = NewBookmarkForm()
+    return {"page": page_obj, "new_bookmark_form": new_bookmark_form}
 
 
-def post_new_bookmark(req):
-    raise Exception("unimp")
-
-
-def get_bookmark_details(req, id):
-    raise Exception("unimp")
+def get_index(req):
+    context = bookmark_context(req)
+    return render(req, "bookmarks/index.html", context)
 
 
 @login_required
+def post_new_bookmark(req):
+    form = NewBookmarkForm(req.POST)
+    form.full_clean()
+    if form.is_valid():
+        bookmark = form.save()
+        return redirect("bookmarks:index", permanent=False)
+    else:
+        context = bookmark_context(req)
+        context["new_bookmark_form"] = NewBookmarkForm(req.POST)
+        return render(req, "bookmarks/index.html", context)
+
+
+def get_bookmark_details(req, id): ...
+
+
 def index(req: HttpRequest):
     match req.method:
         case "GET":
@@ -50,10 +65,29 @@ def index(req: HttpRequest):
             return HttpResponseNotAllowed(permitted_methods=["GET", "POST"])
 
 
-@login_required
 def bookmark(req: HttpRequest, id: int):
     match req.method:
-        case "GET": 
+        case "GET":
             return get_bookmark_details(req, id)
         case _:
             return HttpResponseNotAllowed(permitted_methods=["GET"])
+
+
+def tag_index(req):
+    tags = (
+        Tag.objects.annotate(count=Count("taggit_taggeditem_items"))
+        .order_by("-count")
+        .all()
+    )
+    return render(req, "bookmarks/tags.html", {"tags": tags})
+
+
+def tag_detail(req, tagid):
+    tag = Tag.objects.get(pk=tagid)
+    bookmarks = (
+        Bookmark.objects.filter(tags__name=tag.name).order_by("-created_at").all()
+    )
+    count = bookmarks.count()
+    return render(
+        req, "bookmarks/tag.html", {"tag": tag, "bookmarks": bookmarks, "count": count}
+    )

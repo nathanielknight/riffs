@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block main %}
+<div class="tags"></div>
+{% for tag in tags %}
+<div class="tag">
+    <a href="{% url 'bookmarks:tag' tagid=tag.id %}">{{tag.name}}</a> {{tag.count}}
+</div>
+{% endfor %}
+
+{% endblock %}

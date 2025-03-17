@@ -1,0 +1,19 @@
+<div class="bookmark">
+    <div class="name">{{bookmark.name}}</div>
+    <div class="links">
+        <a href="{% url 'bookmarks:bookmark' bookmark.id %}">details</a>
+        <a href="{% url 'admin:bookmarks_bookmark_change' bookmark.id %}">edit</a>
+        <a href="{{bookmark.url}}">{{bookmark.url}}</a>
+    </div>
+    <div style="font-size: 70%; color: gray">
+        added: {{bookmark.created_at |date:"SHORT_DATETIME_FORMAT"}}
+        {% if bookmark.created_at != bookmark.updated_at %}
+        edited: {{bookmark.updated_at |date:"SHORT_DATETIME_FORMAT"}}
+        {% endif %}
+    </div>
+    <div class="tags">
+        {% for tag in bookmark.tags.all %}
+        <a href="{% url 'bookmarks:tag' tagid=tag.id %}">{{tag.name}}</a>
+        {% endfor%}
+    </div>
+</div>

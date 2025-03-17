@@ -1,50 +1,29 @@
-{% extends "base.html" %}
-
-
-{% block head %}
-<title>Bookmarks</title>
-<style>
-    .bookmarks {
-        margin: 1em 0;
-        display: flex;
-        flex-direction: row;
-    }
-
-    .bookmark {
-        display: inline-block;
-        border: 1px solid black;
-        border-radius: 0.5em;
-        padding: 0.5em;
-        margin: 0.5em;
-        width: 12em;
-    }
-</style>
-{% endblock %}
+{% extends "bookmarks/base.html" %}
 
 {% block main %}
 <h1>Bookmarks</h1>
 
+<details>
+    <summary>Add Bookmark</summary>
+    <form method="POST">
+        {% csrf_token %}
+        <fieldset>
+            {{new_bookmark_form}}
+            <button>Save</button>
+        </fieldset>
+    </form>
+</details>
+
+{% include "_pagination.html" %}
+
 <div class="bookmarks">
-    {% for bookmark in bookmarks_page.object_list %}
-    <div class="bookmark">
-        <div>{{bookmark.name}}</div>
-        <div><a href="{% url 'bookmarks:bookmark' bookmark.id %}">details</a> <a href="{{bookmark.url}}">open</a></div>
-    </div>
+    {% for bookmark in page.object_list %}
+    {% include "bookmarks/_bookmark_card.html" %}
     {% endfor %}
 </div>
+<!-- TODO: links to tags -->
 
-<div class="pagination">
-    {% if bookmarks_page.has_previous %}
-    <a href="?page={{ bookmarks_page.previous_page_number }}" class="page-link">Previous</a>
-    {% endif %}
+{% include "_pagination.html" %}
 
-    <span class="current-page">
-        Page {{ bookmarks_page.number }} of {{ bookmarks_page.paginator.num_pages }}
-    </span>
-
-    {% if bookmarks_page.has_next %}
-    <a href="?page={{ bookmarks_page.next_page_number }}" class="page-link">Next</a>
-    {% endif %}
-</div>
 
 {% endblock %}
