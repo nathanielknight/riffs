@@ -24,7 +24,27 @@
         label {
             font-weight: bold;
         }
+    }
 
+    form.search {
+        display: flex;
+        flex-direction: row;
+        justify-content: left;
+        align-items: center;
+
+        input[type="text"],
+        button {
+            height: 3em;
+            margin: 0;
+        }
+
+        input[type="text"] {
+            max-width: 20em;
+        }
+
+        button {
+            padding-left: 1em;
+        }
     }
 </style>
 {% endblock %}

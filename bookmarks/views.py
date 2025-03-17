@@ -25,13 +25,44 @@ class NewBookmarkForm(forms.ModelForm):
         fields = ["name", "url", "notes", "tags"]
 
 
-def bookmark_context(req):
-    bookmarks = Bookmark.objects.all().order_by("-created_at")
+def paginated_context(req, bookmarks, context):
     paginator = Paginator(bookmarks, 50)
     page_number = req.GET.get("page")
     page_obj = paginator.get_page(page_number)
+    context["page"] = page_obj
+
+
+def bookmark_context(req: HttpRequest):
+    context = {}
+    if query := req.GET.get("q"):
+        bookmarks = Bookmark.objects.raw(
+            """
+            SELECT bookmarks_bookmark.*
+            FROM bookmarks_bookmark
+            JOIN bookmarks_bookmark_fts ON bookmarks_bookmark.id = bookmarks_bookmark_fts.rowid
+            WHERE bookmarks_bookmark_fts MATCH %s
+            ORDER BY rank;
+            """,
+            [query]
+        )
+        context["bookmarks"] = bookmarks
+        context["search"] = {
+            "query": query,
+            "resultscount": len(bookmarks),
+        }
+    else:
+        bookmarks = Bookmark.objects.all().order_by("-created_at")
+        context["bookmarks"] = bookmarks
+
+    paginator = Paginator(bookmarks, 50)
+    page_number = req.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    context["page"] = page_obj
+
     new_bookmark_form = NewBookmarkForm()
-    return {"page": page_obj, "new_bookmark_form": new_bookmark_form}
+    context["new_bookmark_form"] = new_bookmark_form
+
+    return context
 
 
 def get_index(req):

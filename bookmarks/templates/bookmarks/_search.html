@@ -1,0 +1,8 @@
+<form class="search">
+    <input type="text" name="q" id="id_q" {% if search.query %}value="{{search.query}}" autofocus {% endif %}>
+    <button>Search</button>
+</form>
+
+{% if search.resultscount %}
+<p>{{search.resultscount}} results</p>
+{% endif %}
