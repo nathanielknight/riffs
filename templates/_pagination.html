@@ -1,6 +1,6 @@
 <div style="text-align: center;">
     {% if page.has_previous %}
-    <a href="?page=1">First</a>
+    <a href="?page=1{%if search.query%}&q={{query}}{%endif%}">First</a>
     <a href="?page={{ page.previous_page_number }}">Previous</a>
     {% endif %}
 

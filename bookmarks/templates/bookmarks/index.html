@@ -3,11 +3,11 @@
 {% block main %}
 <h1>Bookmarks</h1>
 
-<details>
+<details class="dropshadowbox">
     <summary>Add Bookmark</summary>
     <form method="POST">
         {% csrf_token %}
-        <fieldset>
+        <fieldset style="border: none">
             {{new_bookmark_form}}
             <button>Save</button>
         </fieldset>
