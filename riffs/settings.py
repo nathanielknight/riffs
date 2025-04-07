@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ["RIFFS_SECRET_KEY"]
 DEBUG = bool(os.environ.get("RIFFS_DEBUG", False))
 
-ALLOWED_HOSTS = ["localhost"]
+ALLOWED_HOSTS = ["localhost", "riffs.natknight.xyz"]
 
 
 # Application definition
