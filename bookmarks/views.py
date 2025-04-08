@@ -75,7 +75,7 @@ def post_new_bookmark(req):
     form = NewBookmarkForm(req.POST)
     form.full_clean()
     if form.is_valid():
-        bookmark = form.save()
+        _bookmark = form.save()
         return redirect("bookmarks:index", permanent=False)
     else:
         context = bookmark_context(req)
@@ -83,7 +83,12 @@ def post_new_bookmark(req):
         return render(req, "bookmarks/index.html", context)
 
 
-def get_bookmark_details(req, id): ...
+def get_bookmark_details(req, id):
+    bookmark = Bookmark.objects.get(id=id)
+    context = {
+        "bookmark": bookmark
+    }
+    return render(req, "bookmarks/bookmark.html", context)
 
 
 def index(req: HttpRequest):

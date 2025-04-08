@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block main %}
+
+<nav>
+<a href="/bookmarks">Back</a>
+</nav>
+
+
+<h1>{{bookmark.name}}</h1>
+
+<p><a href="{{bookmark.url}}">Link</a></p>
+
+<p>Created: {{bookmark.created_at}}</p>
+<p>Updated: {{bookmark.updated_at}}</p>
+
+<p>
+{% for tag in bookmark.tags.all %}
+<a href="{% url 'bookmarks:tag' tag.id %}">{{tag.name}}</a>
+{% endfor %}
+
+{% if bookmark.notes %}
+<p>{{bookmark.notes}}</p>
+{% endif %}
+
+{% endblock main %}

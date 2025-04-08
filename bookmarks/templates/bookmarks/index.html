@@ -3,6 +3,7 @@
 {% block main %}
 <h1>Bookmarks</h1>
 
+{% if user.is_authenticated %}
 <details class="dropshadowbox">
     <summary>Add Bookmark</summary>
     <form method="POST">
@@ -13,6 +14,7 @@
         </fieldset>
     </form>
 </details>
+{% endif %}
 
 {% include "bookmarks/_search.html" %}
 
