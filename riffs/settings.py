@@ -19,8 +19,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-SECRET_KEY = os.environ["RIFFS_SECRET_KEY"]
 DEBUG = bool(os.environ.get("RIFFS_DEBUG", False))
+if not DEBUG:
+    SECRET_KEY = os.environ["RIFFS_SECRET_KEY"]
+else:
+    SECRET_KEY = "UNSAFE_DEBUG_SECRET_r-BRovh0yX9Tkvb74HMMmX_ff-1mL6IOYAh2H5JxhU"
 
 ALLOWED_HOSTS = ["localhost", "riffs.natknight.xyz"]
 
