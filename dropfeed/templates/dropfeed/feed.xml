@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+<channel>
+    <title>{{ feed.title }}</title>
+    <description>{{ feed.description }}</description>
+    <link>{{ feed.link }}</link>
+    <language>en-us</language>
+    <lastBuildDate>{% now "r" %}</lastBuildDate>
+    <pubDate>{% now "r" %}</pubDate>
+    <ttl>60</ttl>
+    
+    <itunes:author>{{ feed.author }}</itunes:author>
+    <itunes:summary>{{ feed.description }}</itunes:summary>
+    <itunes:explicit>{{ feed.itunes_explicit }}</itunes:explicit>
+    <itunes:category text="{{ feed.itunes_category }}" />
+    
+    {% for recording in feed.recordings %}
+    <item>
+        <title>{{ recording.title }}</title>
+        <description>{{ recording.description|escape }}</description>
+        <pubDate>{{ recording.pub_date|date:"r" }}</pubDate>
+        <enclosure url="{{ recording.enclosure_url }}" length="{{ recording.enclosure_length }}" type="{{ recording.enclosure_type }}" />
+        <guid>{{ recording.enclosure_url }}</guid>
+        
+        <itunes:author>{{ feed.author }}</itunes:author>
+        <itunes:summary>{{ recording.description|escape }}</itunes:summary>
+        <itunes:explicit>{{ feed.itunes_explicit }}</itunes:explicit>
+    </item>
+    {% endfor %}
+</channel>
+</rss>

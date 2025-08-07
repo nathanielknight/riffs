@@ -24,4 +24,5 @@ urlpatterns = [
     path("", views.index),
     path("admin/", admin.site.urls),
     path("bookmarks/", include("bookmarks.urls", namespace="bookmarks")),
+    path("dropfeed/", include("dropfeed.urls", namespace="dropfeed")),
 ]

@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "django>=5.1.7",
+    "django-constance>=4.3.2",
     "django-taggit>=6.1.0",
     "waitress>=3.0.2",
     "whitenoise>=6.9.0",

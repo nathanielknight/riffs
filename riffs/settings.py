@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+
 import os
 from pathlib import Path
 
@@ -37,9 +38,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "constance",
     "taggit",
     "bookmarks",
     "quotes",
+    "dropfeed",
 ]
 
 MIDDLEWARE = [
@@ -121,7 +124,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = "wwwroot"
-STATICFILES_DIRS = [ BASE_DIR / "static"]
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
@@ -142,3 +145,30 @@ X_FRAME_OPTIONS = "DENY"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = False
 
+
+# Constance
+CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
+CONSTANCE_CONFIG = {
+    "DROPFEED_TITLE": ("My Podcast", "Podcast title shown in RSS feed"),
+    "DROPFEED_DESCRIPTION": ("A podcast feed", "Podcast description shown in RSS feed"),
+    "DROPFEED_AUTHOR": ("Podcast Author", "Podcast author shown in RSS feed"),
+    "DROPFEED_URL_PATH": (
+        "",
+        "URL path for RSS feed (automatically generated if empty)",
+    ),
+    "DROPFEED_ITUNES_CATEGORY": ("Technology", "iTunes category for the podcast"),
+    "DROPFEED_EXPLICIT": (False, "Whether the podcast contains explicit content"),
+}
+CONSTANCE_CONFIG_FIELDSETS = {
+    'DropFeed Podcast Settings': {
+        'fields': (
+            'DROPFEED_TITLE',
+            'DROPFEED_DESCRIPTION', 
+            'DROPFEED_AUTHOR',
+            'DROPFEED_URL_PATH',
+            'DROPFEED_ITUNES_CATEGORY',
+            'DROPFEED_EXPLICIT',
+        ),
+        'collapse': False,
+    },
+}
