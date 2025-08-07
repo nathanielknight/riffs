@@ -12,7 +12,6 @@
     <itunes:author>{{ feed.author }}</itunes:author>
     <itunes:summary>{{ feed.description }}</itunes:summary>
     <itunes:explicit>{{ feed.itunes_explicit }}</itunes:explicit>
-    <itunes:category text="{{ feed.itunes_category }}" />
     
     {% for recording in feed.recordings %}
     <item>

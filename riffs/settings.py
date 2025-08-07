@@ -156,7 +156,6 @@ CONSTANCE_CONFIG = {
         "",
         "URL path for RSS feed (automatically generated if empty)",
     ),
-    "DROPFEED_ITUNES_CATEGORY": ("Technology", "iTunes category for the podcast"),
     "DROPFEED_EXPLICIT": (False, "Whether the podcast contains explicit content"),
 }
 CONSTANCE_CONFIG_FIELDSETS = {
@@ -166,7 +165,6 @@ CONSTANCE_CONFIG_FIELDSETS = {
             'DROPFEED_DESCRIPTION', 
             'DROPFEED_AUTHOR',
             'DROPFEED_URL_PATH',
-            'DROPFEED_ITUNES_CATEGORY',
             'DROPFEED_EXPLICIT',
         ),
         'collapse': False,
