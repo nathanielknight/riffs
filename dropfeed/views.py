@@ -85,7 +85,7 @@ def feed(request, path):
             'title': recording.name,
             'description': recording.description or recording.name,
             'pub_date': recording.uploaded_at,
-            'enclosure_url': request.build_absolute_uri(recording.audio_file.url),
+            'enclosure_url': reverse("dropfeed:recording", kwargs={"id": recording.id}),
             'enclosure_length': recording.file_size,
             'enclosure_type': 'audio/mpeg',
         })
