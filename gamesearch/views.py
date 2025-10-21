@@ -47,12 +47,14 @@ def search_games(request):
     # Note: This uses a brute-force approach, iterating through all games
     # to extract unique tags. This is acceptable for databases with a few
     # thousand entries as specified in requirements.
-    all_tags = set()
+    tag_counts = {}
     for game in RawGame.objects.using("games").all():
         if game.tags:
             tags = [tag.strip() for tag in game.tags.split(",") if tag.strip()]
-            all_tags.update(tags)
-    all_tags = sorted(all_tags)
+            for tag in tags:
+                tag_counts[tag] = tag_counts.get(tag, 0) + 1
+
+    all_tags = sorted(tag_counts.keys())
 
     # Get starred game IDs for display
     starred_ids = set(Star.objects.using("games").values_list("gameid", flat=True))
@@ -81,9 +83,9 @@ def search_games(request):
 
         return "?" + urlencode(params) if params else "?"
 
-    # Build lists of (tag, url) tuples for template
-    available_tags = [(tag, build_tag_url(tag, "add")) for tag in all_tags if tag not in selected_tags]
-    selected_tag_links = [(tag, build_tag_url(tag, "remove")) for tag in selected_tags]
+    # Build lists of (tag, url, count) tuples for template
+    available_tags = [(tag, build_tag_url(tag, "add"), tag_counts.get(tag, 0)) for tag in all_tags if tag not in selected_tags]
+    selected_tag_links = [(tag, build_tag_url(tag, "remove"), tag_counts.get(tag, 0)) for tag in selected_tags]
 
     context = {
         "games": games,
