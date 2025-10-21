@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Q
+from urllib.parse import urlencode
 from .models import RawGame, Star
 
 
@@ -56,10 +57,38 @@ def search_games(request):
     # Get starred game IDs for display
     starred_ids = set(Star.objects.using("games").values_list("gameid", flat=True))
 
+    # Build helper data for tag links
+    def build_tag_url(tag, action="add"):
+        """Build URL with tag added or removed"""
+        params = []
+        if title_query:
+            params.append(("title", title_query))
+        if author_query:
+            params.append(("authors", author_query))
+        if show_starred:
+            params.append(("starred", "1"))
+
+        if action == "add":
+            # Add all selected tags plus the new one
+            for t in selected_tags:
+                params.append(("tags", t))
+            params.append(("tags", tag))
+        else:  # remove
+            # Add all selected tags except the one to remove
+            for t in selected_tags:
+                if t != tag:
+                    params.append(("tags", t))
+
+        return "?" + urlencode(params) if params else "?"
+
+    # Build lists of (tag, url) tuples for template
+    available_tags = [(tag, build_tag_url(tag, "add")) for tag in all_tags if tag not in selected_tags]
+    selected_tag_links = [(tag, build_tag_url(tag, "remove")) for tag in selected_tags]
+
     context = {
         "games": games,
-        "all_tags": all_tags,
-        "selected_tags": selected_tags,
+        "available_tags": available_tags,
+        "selected_tag_links": selected_tag_links,
         "title_query": title_query,
         "author_query": author_query,
         "show_starred": show_starred,

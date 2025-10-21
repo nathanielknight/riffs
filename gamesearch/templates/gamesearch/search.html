@@ -17,13 +17,37 @@
         <label for="authors">Authors:</label>
         <input type="text" id="authors" name="authors" value="{{ author_query }}" placeholder="Search by author...">
 
-        <label for="tags">Tags:</label>
-        <select id="tags" name="tags" multiple size="10">
-            {% for tag in all_tags %}
-            <option value="{{ tag }}" {% if tag in selected_tags %}selected{% endif %}>{{ tag }}</option>
-            {% endfor %}
-        </select>
-        <small>Hold Ctrl/Cmd to select multiple tags</small>
+        <div>
+            <label>Selected Tags:</label>
+            {% if selected_tag_links %}
+                <div style="margin: 0.5em 0;">
+                    {% for tag, url in selected_tag_links %}
+                        <a href="{{ url }}" style="display: inline-block; padding: 0.25em 0.5em; margin: 0.25em; background: #e0e0e0; border-radius: 3px; text-decoration: none; color: #333;">
+                            {{ tag }} <strong>×</strong>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="margin: 0.5em 0; color: #666;"><em>No tags selected</em></p>
+            {% endif %}
+        </div>
+
+        <div>
+            <label>Available Tags:</label>
+            {% if available_tags %}
+                <div style="margin: 0.5em 0;">
+                    {% for tag, url in available_tags %}
+                        <a href="{{ url }}" style="display: inline-block; padding: 0.25em 0.5em; margin: 0.25em; background: #f5f5f5; border: 1px solid #ccc; border-radius: 3px; text-decoration: none; color: #0066cc;">
+                            {{ tag }}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {% if selected_tag_links %}
+                    <p style="margin: 0.5em 0; color: #666;"><em>All tags selected</em></p>
+                {% endif %}
+            {% endif %}
+        </div>
 
         <label>
             <input type="checkbox" name="starred" value="1" {% if show_starred %}checked{% endif %}>
