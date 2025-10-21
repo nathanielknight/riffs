@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "bookmarks",
     "quotes",
     "dropfeed",
+    "gamesearch",
 ]
 
 MIDDLEWARE = [
@@ -84,8 +85,14 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+    },
+    "games": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "games.db",
     }
 }
+
+DATABASE_ROUTERS = ["gamesearch.routers.GamesRouter"]
 
 
 # Password validation

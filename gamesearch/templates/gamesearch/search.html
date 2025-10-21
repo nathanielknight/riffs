@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Game Search - Riffs</title>
+{% endblock %}
+
+{% block main %}
+<h1>Game Search</h1>
+
+<form method="get" action="{% url 'gamesearch:search' %}">
+    <fieldset>
+        <legend>Search Filters</legend>
+
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title" value="{{ title_query }}" placeholder="Search by title...">
+
+        <label for="authors">Authors:</label>
+        <input type="text" id="authors" name="authors" value="{{ author_query }}" placeholder="Search by author...">
+
+        <label for="tags">Tags:</label>
+        <select id="tags" name="tags" multiple size="10">
+            {% for tag in all_tags %}
+            <option value="{{ tag }}" {% if tag in selected_tags %}selected{% endif %}>{{ tag }}</option>
+            {% endfor %}
+        </select>
+        <small>Hold Ctrl/Cmd to select multiple tags</small>
+
+        <label>
+            <input type="checkbox" name="starred" value="1" {% if show_starred %}checked{% endif %}>
+            Show only starred games
+        </label>
+
+        <button type="submit">Search</button>
+        <a href="{% url 'gamesearch:search' %}">Clear Filters</a>
+    </fieldset>
+</form>
+
+<h2>Results ({{ total_count }} game{{ total_count|pluralize }})</h2>
+
+{% if games %}
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Authors</th>
+            <th>Tags</th>
+            <th>Starred</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for game in games %}
+        <tr>
+            <td>{{ game.title|default:"(No title)" }}</td>
+            <td>{{ game.authors|default:"(Unknown)" }}</td>
+            <td>
+                {% if game.tag_list %}
+                    {{ game.tag_list|join:", " }}
+                {% else %}
+                    (No tags)
+                {% endif %}
+            </td>
+            <td>
+                {% if game.id in starred_ids %}
+                    ⭐
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No games found matching your criteria.</p>
+{% endif %}
+
+{% endblock %}

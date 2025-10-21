@@ -25,4 +25,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("bookmarks/", include("bookmarks.urls", namespace="bookmarks")),
     path("dropfeed/", include("dropfeed.urls", namespace="dropfeed")),
+    path("games/", include("gamesearch.urls", namespace="gamesearch")),
 ]
