@@ -40,9 +40,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "constance",
     "taggit",
-    "bookmarks",
-    "quotes",
-    "dropfeed",
+    "bookmarks.apps.BookmarksConfig",
+    "quotes.apps.QuotesConfig",
+    "dropfeed.apps.DropfeedConfig",
 ]
 
 MIDDLEWARE = [
