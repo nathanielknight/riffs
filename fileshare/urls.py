@@ -4,5 +4,5 @@ from . import views
 app_name = "fileshare"
 
 urlpatterns = [
-    path("<uuid:share_key>", views.serve_file, name="serve"),
+    path("<str:share_key>", views.serve_file, name="serve"),
 ]

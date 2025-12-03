@@ -3,7 +3,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from django.urls import reverse
 from datetime import timedelta
-import uuid
+import secrets
 
 from .models import ShareFile
 
@@ -21,7 +21,8 @@ class ShareFileModelTests(TestCase):
 
         self.assertEqual(sharefile.title, "Test File")
         self.assertIsNotNone(sharefile.share_key)
-        self.assertIsInstance(sharefile.share_key, uuid.UUID)
+        self.assertIsInstance(sharefile.share_key, str)
+        self.assertGreater(len(sharefile.share_key), 0)
         self.assertIsNone(sharefile.expiration)
         self.assertIsNotNone(sharefile.created_at)
         self.assertIsNotNone(sharefile.updated_at)
@@ -132,8 +133,8 @@ class ShareFileViewTests(TestCase):
 
     def test_serve_nonexistent_file(self):
         """Test serving a non-existent share_key returns 404"""
-        random_uuid = uuid.uuid4()
-        url = reverse("fileshare:serve", kwargs={"share_key": random_uuid})
+        random_key = secrets.token_urlsafe(16)
+        url = reverse("fileshare:serve", kwargs={"share_key": random_key})
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 404)
