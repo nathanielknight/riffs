@@ -1,12 +1,17 @@
-import uuid
+import secrets
 from django.db import models
 from django.utils import timezone
+
+
+def generate_share_key():
+    """Generate a URL-safe token for sharing"""
+    return secrets.token_urlsafe(16)
 
 
 class ShareFile(models.Model):
     title = models.CharField(max_length=255)
     file = models.FileField(upload_to='sharefiles/')
-    share_key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    share_key = models.CharField(max_length=64, default=generate_share_key, unique=True, editable=False)
     expiration = models.DateTimeField(null=True, blank=True, help_text="Leave blank for no expiration")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
