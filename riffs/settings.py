@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "bookmarks",
     "quotes",
     "dropfeed",
+    "fileshare",
 ]
 
 MIDDLEWARE = [
@@ -126,6 +127,10 @@ STATIC_URL = "static/"
 STATIC_ROOT = "wwwroot"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# Media files (uploads)
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
