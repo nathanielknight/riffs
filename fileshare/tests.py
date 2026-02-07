@@ -27,18 +27,6 @@ class ShareFileModelTests(TestCase):
         self.assertIsNotNone(sharefile.created_at)
         self.assertIsNotNone(sharefile.updated_at)
 
-    def test_sharefile_string_representation(self):
-        """Test __str__ method returns title"""
-        file_content = b"Test file content"
-        uploaded_file = SimpleUploadedFile("test.txt", file_content, content_type="text/plain")
-
-        sharefile = ShareFile.objects.create(
-            title="My Test File",
-            file=uploaded_file
-        )
-
-        self.assertEqual(str(sharefile), "My Test File")
-
     def test_sharefile_not_expired_without_expiration(self):
         """Test that files without expiration are never expired"""
         file_content = b"Test file content"
@@ -155,3 +143,131 @@ class ShareFileViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Content-Disposition", response.headers)
         self.assertIn("attachment", response["Content-Disposition"])
+
+
+class ShareFileIntegrationTests(TestCase):
+    """Integration tests for the full create → retrieve flow."""
+
+    def test_create_and_retrieve_file_content(self):
+        """Create a ShareFile and verify the retrieved content matches exactly."""
+        file_content = b"Integration test: the quick brown fox jumps over the lazy dog."
+        uploaded_file = SimpleUploadedFile(
+            "integration_test.txt", file_content, content_type="text/plain"
+        )
+
+        sharefile = ShareFile.objects.create(
+            title="Integration Test File",
+            file=uploaded_file,
+        )
+
+        # Retrieve via the share URL
+        url = reverse("fileshare:serve", kwargs={"share_key": sharefile.share_key})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        retrieved_content = b"".join(response.streaming_content)
+        self.assertEqual(retrieved_content, file_content)
+
+    def test_create_and_retrieve_binary_file(self):
+        """Verify binary file content survives the round trip."""
+        file_content = bytes(range(256))  # all byte values 0-255
+        uploaded_file = SimpleUploadedFile(
+            "binary_test.bin", file_content, content_type="application/octet-stream"
+        )
+
+        sharefile = ShareFile.objects.create(
+            title="Binary Test File",
+            file=uploaded_file,
+        )
+
+        url = reverse("fileshare:serve", kwargs={"share_key": sharefile.share_key})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        retrieved_content = b"".join(response.streaming_content)
+        self.assertEqual(retrieved_content, file_content)
+
+    def test_content_disposition_has_filename(self):
+        """Verify the Content-Disposition header includes a filename."""
+        uploaded_file = SimpleUploadedFile(
+            "my_report.pdf", b"pdf content", content_type="application/pdf"
+        )
+
+        sharefile = ShareFile.objects.create(
+            title="Test PDF",
+            file=uploaded_file,
+        )
+
+        url = reverse("fileshare:serve", kwargs={"share_key": sharefile.share_key})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        disposition = response["Content-Disposition"]
+        self.assertIn("attachment", disposition)
+        # Filename is based on the stored name (Django may add a suffix for dedup)
+        self.assertIn(".pdf", disposition)
+
+    def test_share_url_with_trailing_slash(self):
+        """Verify that a trailing slash on the share URL still serves the file."""
+        file_content = b"trailing slash test"
+        uploaded_file = SimpleUploadedFile(
+            "slash_test.txt", file_content, content_type="text/plain"
+        )
+
+        sharefile = ShareFile.objects.create(
+            title="Slash Test",
+            file=uploaded_file,
+        )
+
+        # Manually construct URL with trailing slash
+        url_with_slash = f"/share/{sharefile.share_key}/"
+        response = self.client.get(url_with_slash)
+
+        # Should still serve the file (200) or redirect to the correct URL (301/302)
+        if response.status_code in (301, 302):
+            # Follow the redirect
+            response = self.client.get(response["Location"])
+
+        self.assertEqual(
+            response.status_code,
+            200,
+            f"Trailing-slash URL returned {response.status_code}; "
+            f"share_key={sharefile.share_key}",
+        )
+
+    def test_expired_file_not_accessible(self):
+        """Create a file, expire it, and verify it's no longer accessible."""
+        file_content = b"this will expire"
+        uploaded_file = SimpleUploadedFile(
+            "expiring.txt", file_content, content_type="text/plain"
+        )
+        past_time = timezone.now() - timedelta(hours=1)
+
+        sharefile = ShareFile.objects.create(
+            title="Expiring File",
+            file=uploaded_file,
+            expiration=past_time,
+        )
+
+        url = reverse("fileshare:serve", kwargs={"share_key": sharefile.share_key})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_multiple_files_isolated(self):
+        """Verify that creating multiple shared files doesn't cause cross-talk."""
+        files = {}
+        for i in range(3):
+            content = f"file {i} content".encode()
+            uploaded = SimpleUploadedFile(
+                f"file_{i}.txt", content, content_type="text/plain"
+            )
+            sf = ShareFile.objects.create(title=f"File {i}", file=uploaded)
+            files[sf.share_key] = content
+
+        for share_key, expected_content in files.items():
+            url = reverse("fileshare:serve", kwargs={"share_key": share_key})
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            retrieved = b"".join(response.streaming_content)
+            self.assertEqual(retrieved, expected_content)

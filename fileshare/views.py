@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from django.http import FileResponse, Http404, HttpResponse
 from .models import ShareFile
 
@@ -14,7 +13,10 @@ def serve_file(request, share_key):
     Returns:
         FileResponse with the file or 404/403 error
     """
-    sharefile = get_object_or_404(ShareFile, share_key=share_key)
+    try:
+        sharefile = ShareFile.objects.get(share_key=share_key)
+    except ShareFile.DoesNotExist:
+        return HttpResponse("File not found", status=404)
 
     if sharefile.is_expired():
         return HttpResponse("This file has expired and is no longer available.", status=403)
