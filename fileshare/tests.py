@@ -1,4 +1,7 @@
-from django.test import TestCase, Client
+import shutil
+import tempfile
+
+from django.test import TestCase, Client, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from django.urls import reverse
@@ -8,6 +11,14 @@ import secrets
 from .models import ShareFile
 
 
+TEST_MEDIA_ROOT = tempfile.mkdtemp()
+
+
+def tearDownModule():
+    shutil.rmtree(TEST_MEDIA_ROOT, ignore_errors=True)
+
+
+@override_settings(MEDIA_ROOT=TEST_MEDIA_ROOT)
 class ShareFileModelTests(TestCase):
     def test_create_sharefile(self):
         """Test creating a ShareFile instance"""
@@ -81,6 +92,7 @@ class ShareFileModelTests(TestCase):
         self.assertNotEqual(sharefile1.share_key, sharefile2.share_key)
 
 
+@override_settings(MEDIA_ROOT=TEST_MEDIA_ROOT)
 class ShareFileViewTests(TestCase):
     def setUp(self):
         self.client = Client()
@@ -145,6 +157,7 @@ class ShareFileViewTests(TestCase):
         self.assertIn("attachment", response["Content-Disposition"])
 
 
+@override_settings(MEDIA_ROOT=TEST_MEDIA_ROOT)
 class ShareFileIntegrationTests(TestCase):
     """Integration tests for the full create → retrieve flow."""
 
