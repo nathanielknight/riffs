@@ -6,7 +6,11 @@
 <h1>Riffs</h1>
 
 <ul>
-<li><a href="/bookmarks">Bookmarks</a></li>
+{% for app in riffs_apps %}
+<li><a href="/{{ app.name }}/">{{ app.verbose_name|default:app.name|title }}</a></li>
+{% empty %}
+<li>No apps available</li>
+{% endfor %}
 </ul>
 
 

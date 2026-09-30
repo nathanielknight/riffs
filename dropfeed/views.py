@@ -90,7 +90,7 @@ def feed(request, path):
                     reverse("dropfeed:recording", kwargs={"id": recording.id})
                 ),
                 "enclosure_length": recording.file_size,
-                "enclosure_type": "audio/mpeg",
+                "enclosure_type": recording.mime_type,
             }
         )
 
@@ -102,5 +102,10 @@ def feed(request, path):
 
 def recording(request, id):
     recording = Recording.objects.get(id=id)
-    filename = "-".join(recording.name.lower().split()) + ".mp3"
-    return FileResponse(recording.audio_file, as_attachment=True, filename=filename)
+    filename = "-".join(recording.name.lower().split()) + "." + recording.file_extension
+    return FileResponse(
+        recording.audio_file,
+        as_attachment=True,
+        filename=filename,
+        content_type=recording.mime_type,
+    )
