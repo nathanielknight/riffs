@@ -1,5 +1,5 @@
 from django import forms
-from .models import Recording
+from .models import AUDIO_MIME_TYPES, Recording
 
 
 class RecordingForm(forms.ModelForm):
@@ -18,6 +18,6 @@ class RecordingForm(forms.ModelForm):
             }),
             'audio_file': forms.FileInput(attrs={
                 'class': 'form-control',
-                'accept': 'audio/mpeg,.mp3'
+                'accept': ','.join(f'.{ext}' for ext in AUDIO_MIME_TYPES)
             })
         }
