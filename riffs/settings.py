@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "bookmarks.apps.BookmarksConfig",
     "quotes.apps.QuotesConfig",
     "dropfeed.apps.DropfeedConfig",
+    "fileshare.apps.FileshareConfig",
 ]
 
 MIDDLEWARE = [
@@ -127,6 +128,11 @@ STATIC_ROOT = "wwwroot"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+# Media files (uploads)
+# Upload paths include their own "media/" prefix (e.g. dropfeed's
+# "media/recordings/..."), so MEDIA_ROOT is the project root.
+MEDIA_ROOT = BASE_DIR
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
@@ -143,7 +149,6 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SECURE_SSL_REDIRECT = False
 
 
 # Constance
