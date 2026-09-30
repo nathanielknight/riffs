@@ -1,9 +1,10 @@
 import pathlib
 import typing
+from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.management.base import BaseCommand, CommandParser
 
-from dropfeed.models import Recording
+from dropfeed.models import Recording, validate_audio_extension
 
 if typing.TYPE_CHECKING:
     import argparse
@@ -61,6 +62,12 @@ class Command(BaseCommand):
                 )
                 continue
 
+            try:
+                validate_audio_extension(File(None, name=file_path.name))
+            except ValidationError as e:
+                self.stderr.write(self.style.ERROR(f"{file_path}: {e.messages[0]}"))
+                continue
+
             # Use provided name or derive from filename
             recording_name = name if name else file_path.stem
 
@@ -71,8 +78,9 @@ class Command(BaseCommand):
                     recording = Recording(
                         name=recording_name,
                         description=description,
+                        audio_file=django_file,
                     )
-                    recording.audio_file.save(file_path.name, django_file, save=True)
+                    recording.save()
 
                 self.stdout.write(
                     self.style.SUCCESS(

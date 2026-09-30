@@ -1,10 +1,11 @@
 # DropFeed - Django Podcast App
 
-A minimal Django app for uploading MP3 files and publishing them as a podcast RSS feed.
+A minimal Django app for uploading audio files and publishing them as a podcast RSS feed.
 
 ## Features
 
-- Upload MP3 recordings with name and description
+- Upload audio recordings (MP3, M4A, AAC, OGG, Opus, FLAC, WAV) with name and description
+  - MP3 and M4A work in every major podcast app; the other formats aren't supported everywhere (e.g. Apple Podcasts)
 - Automatic RSS feed generation
 - Django admin integration
 - Single-user system with authentication
