@@ -2,15 +2,12 @@
 
 ## Project Overview
 
-**Riffs** is a personal content management system built with Django. It provides functionality through modular Django apps called "riffs", each serving a specific content management purpose.
+**Riffs** is a personal content management system built with Django. It provides functionality through modular Django apps called "riffs", each providing a feature like bookmarking, file-sharing, etc. Some riffs provide features via the Django admin and don't add any non-admin views.
 
 **Key Information:**
-- **Framework:** Django 5.1.7
-- **Python Version:** 3.12+
-- **Database:** SQLite with FTS5 full-text search
-- **Domain:** riffs.natknight.xyz
-- **Deployment:** Docker-ready with UV package manager
-- **Purpose:** Self-hosted, single-user content management
+- Python, Django, server rendered HTML
+- SQLite with FTS5 full-text search
+- uv for dev tooling
 
 ## Architecture
 
@@ -31,85 +28,12 @@ riffs/
 └── pyproject.toml           # Project metadata and dependencies
 ```
 
-### Core Dependencies
-
-```python
-django = "^5.1.7"
-django-taggit = "^6.1.0"        # Tagging system for bookmarks
-django-constance = "^4.3.2"     # Dynamic settings for dropfeed
-whitenoise = "^6.9.0"           # Static file serving
-waitress = "^3.0.2"             # WSGI server
-```
 
 ## The Riffs (Django Apps)
 
-### 1. Bookmarks (`/bookmarks/`)
-
-**Purpose:** Web-based bookmark/link manager with tagging and full-text search.
-
-**Models:**
-- `Bookmark` (bookmarks/models.py:7):
-  - `name`: CharField (title of bookmark)
-  - `url`: URLField (link destination)
-  - `notes`: TextField (description/notes)
-  - `tags`: TaggableManager (via django-taggit)
-  - `created_at`, `updated_at`: DateTimeField
-
-**Key Features:**
-- Full-text search using SQLite FTS5 virtual table
-- Tag-based organization and filtering
-- Public bookmark index with search
-- Authenticated creation (login required)
-- Pagination (50 items per page)
-
-**Endpoints:**
-- `GET /bookmarks/` - Bookmark index with search query parameter
-- `POST /bookmarks/` - Create new bookmark (authenticated)
-- `GET /bookmarks/bookmark/<id>` - Bookmark detail view
-- `GET /bookmarks/tags` - Tag index
-- `GET /bookmarks/tag/<id>` - Bookmarks filtered by tag
-
-**Management Commands:**
-- `import_bookmarks` - Import bookmarks from external SQLite database
-- `make_bookmarks_fts5_index` - Rebuild full-text search index
-
-**Search Implementation:**
-The FTS5 search is implemented in `bookmarks/views.py:13-27`. It creates a virtual table `bookmarks_fts` with columns `name` and `notes` for fast full-text queries.
-
-### 2. DropFeed (`/dropfeed/`)
-
-**Purpose:** Personal podcast RSS feed generator for MP3 audio files.
-
-**Models:**
-- `Recording` (dropfeed/models.py:5):
-  - `id`: UUIDField (primary key, auto-generated)
-  - `name`: CharField (episode title)
-  - `description`: TextField (episode description)
-  - `audio_file`: FileField (MP3 upload)
-  - `file_size`: IntegerField (bytes, auto-calculated)
-  - `uploaded_at`: DateTimeField (auto-generated)
-
-**Key Features:**
-- Upload MP3 files with metadata
-- Auto-generate RSS 2.0 podcast feed with iTunes extensions
-- Secure random URL path for feed access
-- Public feed (no authentication required)
-- Configurable via Django admin using django-constance
-- Automatic file deletion when recording is removed
-
-**Endpoints:**
-- `GET/POST /dropfeed/` - Upload interface (authenticated)
-- `GET /dropfeed/feed/<path>/` - RSS feed (public, path is secure random token)
-- `GET /dropfeed/recording/<id>` - Audio file download (public)
-
-**Configuration (via Constance):**
-Settings stored in database, configurable through Django admin:
-- `DROPFEED_TITLE` - Podcast title
-- `DROPFEED_DESCRIPTION` - Podcast description
-- `DROPFEED_AUTHOR` - Author name
-- `DROPFEED_URL_PATH` - Secure random path (auto-generated)
-- `DROPFEED_EXPLICIT` - iTunes explicit content flag
-- `DROPFEED_ITUNES_CATEGORY` - Podcast category
+- Bookmarks (save and search links with tags and descriptions)
+- Dropfeed (generate a podcast feed from uploaded audio files)
+- Quotes (admin-only database editing riff)
 
 **RSS Feed Implementation:**
 See `dropfeed/views.py:34-81` for RSS generation logic. Uses Django's `Rss201rev2Feed` with custom iTunes namespace extensions.
@@ -119,36 +43,8 @@ See `dropfeed/views.py:34-81` for RSS generation logic. Uses Django's `Rss201rev
 - Audio files are served directly from media directory
 - File size is calculated on upload and stored for RSS enclosure tag
 
-### 3. Quotes (`/quotes/`)
 
-**Purpose:** Admin-only quotation management system.
-
-**Models:**
-- `Quote` (quotes/models.py:5):
-  - `slug`: SlugField (unique identifier)
-  - `content`: TextField (quote text)
-  - `source`: CharField (author/attribution)
-  - `link`: URLField (optional reference URL)
-  - `created_at`, `updated_at`: DateTimeField
-
-**Key Features:**
-- Full-text search using SQLite FTS5
-- Slug-based unique identifiers
-- Import from text files
-- Admin-only (no public views)
-
-**Management Commands:**
-- `quotes_from_dir` - Import quotes from directory of text files
-  - File format: `$ slug: <slug>`, `$ source: <source>`, `$ link: <url>`, then quote content
-
-**FTS Implementation:**
-Quotes automatically create/update FTS5 virtual table on save (see `quotes/models.py:17-26`).
-
-**Important Notes:**
-- No public-facing views (access only through Django admin)
-- Primarily for internal reference and search
-
-## Common Development Patterns
+## Development Patterns
 
 ### Full-Text Search Pattern
 
@@ -280,33 +176,22 @@ Run with: `python manage.py <command>`
 
 **Development:**
 ```bash
-python manage.py runserver
-```
-
-**Production (Docker):**
-```bash
-docker build -t riffs .
-docker run -p 8000:8000 riffs
+RIFFS_DEBUG=1 uv run manage.py runserver
 ```
 
 **Database Migrations:**
 ```bash
-python manage.py makemigrations
-python manage.py migrate
-```
-
-**Create Superuser:**
-```bash
-python manage.py createsuperuser
+RIFFS_DEBUG=1 uv run manage.py makemigrations
+RIFFS_DEBUG=1 uv run manage.py migrate
 ```
 
 ## Testing
 
-The project currently has minimal test coverage. When adding tests:
+When adding tests:
 
 1. Create `tests.py` in each app
 2. Use Django's `TestCase` class
-3. Run with: `python manage.py test`
+3. Run with: `RIFFS_DEBUG uv run manage.py test`
 
 Example test structure:
 ```python
@@ -331,36 +216,15 @@ class MyModelTestCase(TestCase):
 ### Important Security Notes
 - **DropFeed URL Path:** The feed path is meant to be secret. Don't expose it publicly.
 - **Admin Interface:** Only accessible to authenticated superusers.
-- **File Uploads:** DropFeed accepts MP3 files. Consider adding file type validation if extending upload functionality.
 - **SQL Injection:** FTS5 queries use parameterized queries. Always use `?` placeholders, never string formatting.
 
 ## Deployment
-
-### Environment Variables
-
-Set these in production:
-- `DJANGO_SECRET_KEY` - Django secret key (required)
-- `DJANGO_DEBUG` - Set to `False` in production
-- `DJANGO_ALLOWED_HOSTS` - Comma-separated list of allowed hosts
 
 ### Static Files
 
 Static files are served via WhiteNoise in production. Run:
 ```bash
-python manage.py collectstatic
-```
-
-### Docker Deployment
-
-The project includes a Dockerfile. Build and run:
-```bash
-docker build -t riffs .
-docker run -d -p 8000:8000 \
-  -e DJANGO_SECRET_KEY="your-secret-key" \
-  -e DJANGO_ALLOWED_HOSTS="riffs.natknight.xyz" \
-  -v /path/to/db:/app/db \
-  -v /path/to/media:/app/media \
-  riffs
+RIFFS_DEBUG=1 uv run manage.py collectstatic
 ```
 
 ## Troubleshooting
@@ -387,41 +251,18 @@ If migrations fail:
 
 ## Common Tasks
 
-### Import Bookmarks
-```bash
-python manage.py import_bookmarks /path/to/bookmarks.db
-```
-
-### Import Quotes from Directory
-```bash
-python manage.py quotes_from_dir /path/to/quotes/
-```
-
 ### Rebuild Bookmark Search Index
 ```bash
 python manage.py make_bookmarks_fts5_index
 ```
 
-### Access Admin Interface
-Navigate to `/admin/` and log in with superuser credentials.
-
 ## Project Philosophy
 
 This project emphasizes:
+
 - **Simplicity:** Clean, minimal design using simple.css
 - **Self-hosted:** Run on personal infrastructure
 - **Privacy:** No tracking, analytics, or external dependencies
 - **Modularity:** Each riff is independent and focused
 - **Search:** Full-text search where it matters (bookmarks, quotes)
 
-## Future Enhancement Ideas
-
-Potential areas for expansion:
-- User authentication system for multi-user support
-- API endpoints (Django REST framework)
-- Export functionality (JSON, CSV)
-- Backup management commands
-- Additional riffs (notes, tasks, reading list, etc.)
-- Web-based FTS index rebuild (instead of management command)
-- Better test coverage
-- RSS feed for bookmarks
