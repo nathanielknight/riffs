@@ -12,12 +12,11 @@ class ShareFileModelTests(TestCase):
     def test_create_sharefile(self):
         """Test creating a ShareFile instance"""
         file_content = b"Test file content"
-        uploaded_file = SimpleUploadedFile("test.txt", file_content, content_type="text/plain")
-
-        sharefile = ShareFile.objects.create(
-            title="Test File",
-            file=uploaded_file
+        uploaded_file = SimpleUploadedFile(
+            "test.txt", file_content, content_type="text/plain"
         )
+
+        sharefile = ShareFile.objects.create(title="Test File", file=uploaded_file)
 
         self.assertEqual(sharefile.title, "Test File")
         self.assertIsNotNone(sharefile.share_key)
@@ -30,12 +29,12 @@ class ShareFileModelTests(TestCase):
     def test_sharefile_not_expired_without_expiration(self):
         """Test that files without expiration are never expired"""
         file_content = b"Test file content"
-        uploaded_file = SimpleUploadedFile("test.txt", file_content, content_type="text/plain")
+        uploaded_file = SimpleUploadedFile(
+            "test.txt", file_content, content_type="text/plain"
+        )
 
         sharefile = ShareFile.objects.create(
-            title="Test File",
-            file=uploaded_file,
-            expiration=None
+            title="Test File", file=uploaded_file, expiration=None
         )
 
         self.assertFalse(sharefile.is_expired())
@@ -43,13 +42,13 @@ class ShareFileModelTests(TestCase):
     def test_sharefile_not_expired_with_future_expiration(self):
         """Test that files with future expiration are not expired"""
         file_content = b"Test file content"
-        uploaded_file = SimpleUploadedFile("test.txt", file_content, content_type="text/plain")
+        uploaded_file = SimpleUploadedFile(
+            "test.txt", file_content, content_type="text/plain"
+        )
         future_time = timezone.now() + timedelta(days=1)
 
         sharefile = ShareFile.objects.create(
-            title="Test File",
-            file=uploaded_file,
-            expiration=future_time
+            title="Test File", file=uploaded_file, expiration=future_time
         )
 
         self.assertFalse(sharefile.is_expired())
@@ -57,13 +56,13 @@ class ShareFileModelTests(TestCase):
     def test_sharefile_expired_with_past_expiration(self):
         """Test that files with past expiration are expired"""
         file_content = b"Test file content"
-        uploaded_file = SimpleUploadedFile("test.txt", file_content, content_type="text/plain")
+        uploaded_file = SimpleUploadedFile(
+            "test.txt", file_content, content_type="text/plain"
+        )
         past_time = timezone.now() - timedelta(days=1)
 
         sharefile = ShareFile.objects.create(
-            title="Test File",
-            file=uploaded_file,
-            expiration=past_time
+            title="Test File", file=uploaded_file, expiration=past_time
         )
 
         self.assertTrue(sharefile.is_expired())
@@ -72,8 +71,12 @@ class ShareFileModelTests(TestCase):
         """Test that share_key is unique across instances"""
         file_content1 = b"Test file content 1"
         file_content2 = b"Test file content 2"
-        uploaded_file1 = SimpleUploadedFile("test1.txt", file_content1, content_type="text/plain")
-        uploaded_file2 = SimpleUploadedFile("test2.txt", file_content2, content_type="text/plain")
+        uploaded_file1 = SimpleUploadedFile(
+            "test1.txt", file_content1, content_type="text/plain"
+        )
+        uploaded_file2 = SimpleUploadedFile(
+            "test2.txt", file_content2, content_type="text/plain"
+        )
 
         sharefile1 = ShareFile.objects.create(title="File 1", file=uploaded_file1)
         sharefile2 = ShareFile.objects.create(title="File 2", file=uploaded_file2)
@@ -88,12 +91,11 @@ class ShareFileViewTests(TestCase):
     def test_serve_valid_file(self):
         """Test serving a valid, non-expired file"""
         file_content = b"Test file content"
-        uploaded_file = SimpleUploadedFile("test.txt", file_content, content_type="text/plain")
-
-        sharefile = ShareFile.objects.create(
-            title="Test File",
-            file=uploaded_file
+        uploaded_file = SimpleUploadedFile(
+            "test.txt", file_content, content_type="text/plain"
         )
+
+        sharefile = ShareFile.objects.create(title="Test File", file=uploaded_file)
 
         url = reverse("fileshare:serve", kwargs={"share_key": sharefile.share_key})
         response = self.client.get(url)
@@ -104,13 +106,13 @@ class ShareFileViewTests(TestCase):
     def test_serve_expired_file(self):
         """Test serving an expired file returns 403"""
         file_content = b"Test file content"
-        uploaded_file = SimpleUploadedFile("test.txt", file_content, content_type="text/plain")
+        uploaded_file = SimpleUploadedFile(
+            "test.txt", file_content, content_type="text/plain"
+        )
         past_time = timezone.now() - timedelta(days=1)
 
         sharefile = ShareFile.objects.create(
-            title="Expired File",
-            file=uploaded_file,
-            expiration=past_time
+            title="Expired File", file=uploaded_file, expiration=past_time
         )
 
         url = reverse("fileshare:serve", kwargs={"share_key": sharefile.share_key})
@@ -130,12 +132,11 @@ class ShareFileViewTests(TestCase):
     def test_file_download_disposition(self):
         """Test that file response includes proper Content-Disposition header"""
         file_content = b"Test file content"
-        uploaded_file = SimpleUploadedFile("myfile.txt", file_content, content_type="text/plain")
-
-        sharefile = ShareFile.objects.create(
-            title="Test File",
-            file=uploaded_file
+        uploaded_file = SimpleUploadedFile(
+            "myfile.txt", file_content, content_type="text/plain"
         )
+
+        sharefile = ShareFile.objects.create(title="Test File", file=uploaded_file)
 
         url = reverse("fileshare:serve", kwargs={"share_key": sharefile.share_key})
         response = self.client.get(url)

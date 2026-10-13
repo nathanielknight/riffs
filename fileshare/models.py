@@ -10,9 +10,13 @@ def generate_share_key():
 
 class ShareFile(models.Model):
     title = models.CharField(max_length=255)
-    file = models.FileField(upload_to='sharefiles/')
-    share_key = models.CharField(max_length=64, default=generate_share_key, unique=True, editable=False)
-    expiration = models.DateTimeField(null=True, blank=True, help_text="Leave blank for no expiration")
+    file = models.FileField(upload_to="sharefiles/")
+    share_key = models.CharField(
+        max_length=64, default=generate_share_key, unique=True, editable=False
+    )
+    expiration = models.DateTimeField(
+        null=True, blank=True, help_text="Leave blank for no expiration"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -26,4 +30,4 @@ class ShareFile(models.Model):
         return timezone.now() > self.expiration
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
