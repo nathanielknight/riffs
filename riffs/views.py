@@ -8,6 +8,6 @@ def index(req):
     """
     riffs_apps = RiffsAppConfig.get_public_apps_with_views()
     context = {
-        'riffs_apps': riffs_apps,
+        "riffs_apps": riffs_apps,
     }
     return render(req, "index.html", context)

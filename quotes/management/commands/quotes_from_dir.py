@@ -79,7 +79,7 @@ class Command(BaseCommand):
                 quote = parse_entry(src, log)
                 quotes.append(quote)
 
-        for (quote, ctime) in quotes:
+        for quote, ctime in quotes:
             quote.save()
             quote.created_at = ctime
             quote.save()

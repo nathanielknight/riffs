@@ -133,6 +133,7 @@ To add FTS5 search to a model:
 ```python
 from django.db import connection
 
+
 def rebuild_fts_index():
     with connection.cursor() as cursor:
         cursor.execute("DROP TABLE IF EXISTS myapp_fts")
@@ -149,11 +150,14 @@ def rebuild_fts_index():
 
 Then in views:
 ```python
-cursor.execute("""
+cursor.execute(
+    """
     SELECT m.* FROM myapp_mymodel m
     JOIN myapp_fts f ON m.id = f.rowid
     WHERE myapp_fts MATCH ?
-""", [query])
+""",
+    [query],
+)
 ```
 
 ### Management Commands
@@ -162,12 +166,13 @@ Create in `<app>/management/commands/<command>.py`:
 ```python
 from django.core.management.base import BaseCommand
 
+
 class Command(BaseCommand):
-    help = 'Description of command'
+    help = "Description of command"
 
     def handle(self, *args, **options):
         # Command logic
-        self.stdout.write(self.success('Success message'))
+        self.stdout.write(self.success("Success message"))
 ```
 
 Run with: `python manage.py <command>`
@@ -197,6 +202,7 @@ Example test structure:
 ```python
 from django.test import TestCase
 from .models import MyModel
+
 
 class MyModelTestCase(TestCase):
     def test_model_creation(self):

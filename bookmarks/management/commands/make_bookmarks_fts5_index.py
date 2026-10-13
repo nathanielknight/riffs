@@ -23,14 +23,14 @@ class Command(BaseCommand):
 
             # Bulk-insert directly from the bookmarks table
             self.stdout.write("  ...inserting from bookmarks_bookmark")
-            cursor.execute('''
+            cursor.execute("""
                 INSERT INTO bookmarks_bookmark_fts(rowid, name, url, notes)
                 SELECT id, 
                         COALESCE(name, ''), 
                         COALESCE(url, ''), 
                         COALESCE(notes, '')
                 FROM bookmarks_bookmark
-            ''')
+            """)
 
         self.stdout.write(
             self.style.SUCCESS(

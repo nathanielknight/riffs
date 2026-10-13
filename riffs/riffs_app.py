@@ -47,7 +47,4 @@ class RiffsAppConfig(AppConfig):
         Returns:
             list: List of RiffsAppConfig instances that are public and have views.
         """
-        return [
-            app for app in cls.get_riffs_apps()
-            if app.is_public and app.has_views
-        ]
+        return [app for app in cls.get_riffs_apps() if app.is_public and app.has_views]

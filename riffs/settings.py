@@ -163,14 +163,14 @@ CONSTANCE_CONFIG = {
     "DROPFEED_EXPLICIT": (False, "Whether the podcast contains explicit content"),
 }
 CONSTANCE_CONFIG_FIELDSETS = {
-    'DropFeed Podcast Settings': {
-        'fields': (
-            'DROPFEED_TITLE',
-            'DROPFEED_DESCRIPTION', 
-            'DROPFEED_AUTHOR',
-            'DROPFEED_URL_PATH',
-            'DROPFEED_EXPLICIT',
+    "DropFeed Podcast Settings": {
+        "fields": (
+            "DROPFEED_TITLE",
+            "DROPFEED_DESCRIPTION",
+            "DROPFEED_AUTHOR",
+            "DROPFEED_URL_PATH",
+            "DROPFEED_EXPLICIT",
         ),
-        'collapse': False,
+        "collapse": False,
     },
 }

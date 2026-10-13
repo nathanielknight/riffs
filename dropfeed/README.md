@@ -17,9 +17,9 @@ A minimal Django app for uploading audio files and publishing them as a podcast 
 ```python
 INSTALLED_APPS = [
     # ... your other apps
-    'constance',
-    'constance.backends.database',
-    'dropfeed',
+    "constance",
+    "constance.backends.database",
+    "dropfeed",
 ]
 ```
 
@@ -27,7 +27,7 @@ INSTALLED_APPS = [
 ```python
 from dropfeed.config import CONSTANCE_CONFIG, CONSTANCE_CONFIG_FIELDSETS
 
-CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
+CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
 CONSTANCE_CONFIG = CONSTANCE_CONFIG
 CONSTANCE_CONFIG_FIELDSETS = CONSTANCE_CONFIG_FIELDSETS
 ```
@@ -38,7 +38,7 @@ from django.urls import path, include
 
 urlpatterns = [
     # ... your other URLs
-    path('podcast/', include('dropfeed.urls')),
+    path("podcast/", include("dropfeed.urls")),
 ]
 ```
 
@@ -50,8 +50,8 @@ python manage.py migrate
 
 5. Configure media files in settings.py:
 ```python
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 ```
 
 ## Dependencies

@@ -43,7 +43,7 @@ def bookmark_context(req: HttpRequest):
             WHERE bookmarks_bookmark_fts MATCH %s
             ORDER BY rank;
             """,
-            [query]
+            [query],
         )
         context["bookmarks"] = bookmarks
         context["search"] = {
@@ -85,9 +85,7 @@ def post_new_bookmark(req):
 
 def get_bookmark_details(req, id):
     bookmark = Bookmark.objects.get(id=id)
-    context = {
-        "bookmark": bookmark
-    }
+    context = {"bookmark": bookmark}
     return render(req, "bookmarks/bookmark.html", context)
 
 

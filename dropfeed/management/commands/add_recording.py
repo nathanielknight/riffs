@@ -51,15 +51,11 @@ class Command(BaseCommand):
                 file_path = pathlib.Path(file_path)
 
             if not file_path.exists():
-                self.stderr.write(
-                    self.style.ERROR(f"File does not exist: {file_path}")
-                )
+                self.stderr.write(self.style.ERROR(f"File does not exist: {file_path}"))
                 continue
 
             if not file_path.is_file():
-                self.stderr.write(
-                    self.style.ERROR(f"Not a file: {file_path}")
-                )
+                self.stderr.write(self.style.ERROR(f"Not a file: {file_path}"))
                 continue
 
             try:
