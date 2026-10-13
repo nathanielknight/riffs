@@ -1,7 +1,7 @@
-from riffs.riffs_app import RiffsAppConfig
+from riffs import riffs_app
 
 
-class DropfeedConfig(RiffsAppConfig):
+class DropfeedConfig(riffs_app.RiffsAppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "dropfeed"
     verbose_name = "DropFeed Podcast Manager"

@@ -1,7 +1,7 @@
-from riffs.riffs_app import RiffsAppConfig
+from riffs import riffs_app
 
 
-class QuotesConfig(RiffsAppConfig):
+class QuotesConfig(riffs_app.RiffsAppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "quotes"
     has_views = False

@@ -1,7 +1,7 @@
-from riffs.riffs_app import RiffsAppConfig
+from riffs import riffs_app
 
 
-class BookmarksConfig(RiffsAppConfig):
+class BookmarksConfig(riffs_app.RiffsAppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "bookmarks"
     has_views = True
