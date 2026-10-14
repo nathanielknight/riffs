@@ -335,7 +335,7 @@
         </p>
         <p class="muted">
             {{ push_device_count }} device{{ push_device_count|pluralize }} subscribed.
-            Days and weeks use the {{ time_zone }} time zone<span id="tz-warning"></span>.
+            Times are shown in {{ time_zone }}.
         </p>
         <p id="push-status" class="muted"></p>
         <div class="actions">
@@ -350,7 +350,6 @@
 </section>
 
 {{ vapid_public_key|json_script:"vapid-public-key" }}
-{{ time_zone|json_script:"time-zone" }}
 <script>
     // Keep running durations ticking.
     (function () {
@@ -365,16 +364,6 @@
             }
         }
         setInterval(tick, 15000);
-    })();
-
-    // Time zone mismatch hint.
-    (function () {
-        const configured = JSON.parse(document.getElementById("time-zone").textContent);
-        const browser = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (browser && browser !== configured) {
-            document.getElementById("tz-warning").textContent =
-                " (this device is in " + browser + "; change TIMETRACK_TIME_ZONE in the admin's Config page if that's wrong)";
-        }
     })();
 
     // Push notification subscription.

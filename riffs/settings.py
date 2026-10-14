@@ -114,7 +114,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "America/Vancouver"
 
 USE_I18N = True
 
@@ -163,8 +163,9 @@ CONSTANCE_CONFIG = {
     ),
     "DROPFEED_EXPLICIT": (False, "Whether the podcast contains explicit content"),
     "TIMETRACK_TIME_ZONE": (
-        "UTC",
-        "IANA time zone used for days, weeks and reminders (e.g. America/Toronto)",
+        "",
+        "Time zone for reminders; set automatically from your browser "
+        "(blank uses the server's TIME_ZONE)",
     ),
     "TIMETRACK_PUSH_CONTACT": (
         "mailto:admin@example.com",

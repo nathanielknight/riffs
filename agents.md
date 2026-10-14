@@ -37,7 +37,7 @@ riffs/
 - Timetrack (client time tracking: start/stop intervals rounded to 5 minutes, daily/weekly totals, Web Push reminders)
 
 **Timetrack Reminders:**
-`uv run manage.py timetrack_remind` sends a push notification to subscribed devices if nothing has been tracked today (or an interval has been running 10+ hours). It does no scheduling itself; run it from cron at the reminder time. The VAPID key is generated on first use and stored in constance; days/weeks use `TIMETRACK_TIME_ZONE`.
+`uv run manage.py timetrack_remind` sends a push notification to subscribed devices if nothing has been tracked today (or an interval has been running 10+ hours). It does no scheduling itself; run it from cron at the reminder time. The VAPID key is generated on first use and stored in constance; times are shown in the browser's time zone (sent as a `timetrack_tz` cookie), which is also saved to `TIMETRACK_TIME_ZONE` so reminders use it.
 
 **RSS Feed Implementation:**
 See `dropfeed/views.py:34-81` for RSS generation logic. Uses Django's `Rss201rev2Feed` with custom iTunes namespace extensions.
