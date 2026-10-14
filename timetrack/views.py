@@ -2,8 +2,10 @@ import datetime
 import json
 import zoneinfo
 from collections import defaultdict
+from urllib.parse import unquote
 
 from constance import config
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Max
@@ -20,15 +22,35 @@ from .models import Interval, PushSubscription, round_time
 RECENT_PROJECT_COUNT = 8
 
 
-def local_tz():
+TZ_COOKIE = "timetrack_tz"
+
+
+def _zone(name):
     try:
-        return zoneinfo.ZoneInfo(config.TIMETRACK_TIME_ZONE)
+        return zoneinfo.ZoneInfo(name) if name else None
     except zoneinfo.ZoneInfoNotFoundError, ValueError:
-        return zoneinfo.ZoneInfo("UTC")
+        return None
 
 
-def activate_local_tz():
-    tz = local_tz()
+def local_tz():
+    """The time zone last reported by a browser, else the server's."""
+    return (
+        _zone(config.TIMETRACK_TIME_ZONE)
+        or _zone(settings.TIME_ZONE)
+        or zoneinfo.ZoneInfo("UTC")
+    )
+
+
+def activate_local_tz(request):
+    """Use the browser's time zone (sent as a cookie) for this request.
+
+    The browser's zone is also remembered so reminders, which run without a
+    browser, follow wherever it was last used.
+    """
+    browser_tz = _zone(unquote(request.COOKIES.get(TZ_COOKIE, "")))
+    if browser_tz and str(browser_tz) != config.TIMETRACK_TIME_ZONE:
+        config.TIMETRACK_TIME_ZONE = str(browser_tz)
+    tz = browser_tz or local_tz()
     timezone.activate(tz)
     return tz
 
@@ -81,7 +103,7 @@ def parse_local_datetime(value):
 
 @login_required
 def index(request):
-    tz = activate_local_tz()
+    tz = activate_local_tz(request)
     now = timezone.now()
     today = timezone.localdate(now)
     this_monday = week_monday(today)
@@ -143,7 +165,7 @@ def index(request):
 @login_required
 @require_POST
 def start(request):
-    activate_local_tz()
+    activate_local_tz(request)
     project = request.POST.get("project", "").strip()
     if not project:
         messages.error(request, "A project name is required to start tracking.")
@@ -169,7 +191,7 @@ def start(request):
 @login_required
 @require_POST
 def stop(request):
-    activate_local_tz()
+    activate_local_tz(request)
     running = Interval.running()
     if running:
         ended = parse_local_datetime(request.POST.get("end")) or timezone.now()
@@ -184,7 +206,7 @@ def _week_url(interval):
 
 
 def _interval_form_view(request, interval):
-    activate_local_tz()
+    activate_local_tz(request)
     if request.method == "POST":
         form = IntervalForm(request.POST, instance=interval)
         if form.is_valid():
@@ -218,7 +240,7 @@ def edit_interval(request, id):
 @login_required
 @require_POST
 def delete_interval(request, id):
-    activate_local_tz()
+    activate_local_tz(request)
     interval = get_object_or_404(Interval, id=id)
     url = _week_url(interval)
     interval.delete()
