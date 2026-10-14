@@ -198,6 +198,41 @@ class TimetrackViewTests(TestCase):
         )
 
 
+class BrowserTimeZoneTests(TestCase):
+    def setUp(self):
+        config.TIMETRACK_TIME_ZONE = ""
+        self.client.force_login(User.objects.create_user("user", password="pw"))
+
+    def test_defaults_to_server_time_zone(self):
+        response = self.client.get(reverse("timetrack:index"))
+        self.assertEqual(response.context["time_zone"], "America/Vancouver")
+
+    def test_browser_time_zone_is_used_and_remembered(self):
+        self.client.cookies["timetrack_tz"] = "Europe/Zurich"
+        self.client.post(
+            reverse("timetrack:start"), {"project": "A", "start": "2026-10-14T09:00"}
+        )
+        self.assertEqual(
+            Interval.objects.get().start,
+            datetime.datetime(
+                2026, 10, 14, 9, tzinfo=zoneinfo.ZoneInfo("Europe/Zurich")
+            ),
+        )
+        # Reminders run without a browser, so they use the remembered zone.
+        self.assertEqual(config.TIMETRACK_TIME_ZONE, "Europe/Zurich")
+
+    def test_url_encoded_cookie(self):
+        self.client.cookies["timetrack_tz"] = "Europe%2FLondon"
+        response = self.client.get(reverse("timetrack:index"))
+        self.assertEqual(response.context["time_zone"], "Europe/London")
+
+    def test_invalid_browser_time_zone_is_ignored(self):
+        self.client.cookies["timetrack_tz"] = "Not/AZone"
+        response = self.client.get(reverse("timetrack:index"))
+        self.assertEqual(response.context["time_zone"], "America/Vancouver")
+        self.assertEqual(config.TIMETRACK_TIME_ZONE, "")
+
+
 class ReminderTests(TestCase):
     def setUp(self):
         config.TIMETRACK_TIME_ZONE = "America/Toronto"
