@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>{% block title %}Time Tracker{% endblock %}</title>
+<link rel="manifest" href="{% url 'timetrack:manifest' %}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Timetrack">
+<style>
+    .stats {
+        display: flex;
+        gap: 2em;
+        font-size: 1.1em;
+    }
+
+    .stats strong {
+        display: block;
+        font-size: 1.6em;
+    }
+
+    .running {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1em;
+    }
+
+    .running .elapsed {
+        font-size: 2em;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .quickstart {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5em;
+    }
+
+    .quickstart form,
+    .inline {
+        display: inline;
+        margin: 0;
+    }
+
+    .quickstart button {
+        margin: 0;
+    }
+
+    .muted {
+        color: var(--text-light);
+        font-size: 0.9em;
+    }
+
+    .weeknav {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+    }
+
+    .duration {
+        font-variant-numeric: tabular-nums;
+    }
+
+    [hidden] {
+        display: none !important;
+    }
+
+    td.nowrap {
+        white-space: nowrap;
+    }
+
+    td.num,
+    th.num {
+        text-align: right;
+    }
+
+    table {
+        width: 100%;
+        display: table;
+    }
+
+    .messages {
+        list-style: none;
+        padding: 0;
+    }
+
+    .messages .error {
+        color: var(--code);
+    }
+
+    button.link {
+        background: none;
+        border: none;
+        color: var(--accent);
+        padding: 0;
+        margin: 0;
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: inherit;
+    }
+</style>
+{% endblock %}
+
+{% block main %}
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% block content %}{% endblock %}
+
+<datalist id="projects">
+    {% for project in all_projects %}
+    <option value="{{ project }}">
+    {% endfor %}
+</datalist>
+{% endblock %}

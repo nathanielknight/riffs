@@ -1,0 +1,230 @@
+{% extends "timetrack/base.html" %}
+{% load timetrack %}
+
+{% block content %}
+<h1>Time Tracker</h1>
+
+<div class="stats">
+    <div>Today <strong>{% total today_total %}</strong></div>
+    <div>This week <strong>{% total this_week_total %}</strong></div>
+</div>
+
+<section>
+    {% if running %}
+    <div class="running notice">
+        <div>
+            <div><strong>{{ running.project }}</strong>{% if running.note %} — {{ running.note }}{% endif %}</div>
+            <div class="muted">since {{ running.start|date:"D H:i" }} · <a href="{% url 'timetrack:edit' running.id %}">edit</a></div>
+        </div>
+        <div class="elapsed">{% duration running.duration True %}</div>
+        <form method="post" action="{% url 'timetrack:stop' %}" class="inline">
+            {% csrf_token %}
+            <button>Stop</button>
+        </form>
+    </div>
+    <details>
+        <summary>Stop at a different time</summary>
+        <form method="post" action="{% url 'timetrack:stop' %}">
+            {% csrf_token %}
+            <label for="stop-end">Ended at</label>
+            <input type="datetime-local" step="300" name="end" id="stop-end" required
+                value="{{ now|date:'Y-m-d\TH:i' }}">
+            <button>Stop</button>
+        </form>
+    </details>
+    {% else %}
+    <p class="muted">Not tracking anything right now.</p>
+    {% endif %}
+</section>
+
+{% if recent_projects %}
+<section>
+    <h3>Start again</h3>
+    <div class="quickstart">
+        {% for project in recent_projects %}
+        <form method="post" action="{% url 'timetrack:start' %}">
+            {% csrf_token %}
+            <input type="hidden" name="project" value="{{ project }}">
+            <button {% if running and running.project == project %}disabled{% endif %}>▶ {{ project }}</button>
+        </form>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<details {% if not recent_projects %}open{% endif %}>
+    <summary>Start something new</summary>
+    <form method="post" action="{% url 'timetrack:start' %}">
+        {% csrf_token %}
+        <label for="start-project">Project</label>
+        <input type="text" name="project" id="start-project" list="projects" required>
+        <label for="start-note">Note (optional)</label>
+        <input type="text" name="note" id="start-note">
+        <label for="start-start">Started at (blank for now)</label>
+        <input type="datetime-local" step="300" name="start" id="start-start">
+        <button>Start</button>
+    </form>
+</details>
+
+<section>
+    <div class="weeknav">
+        <a href="?week={{ prev_week|date:'Y-m-d' }}">« Previous</a>
+        <span>
+            {% if not is_this_week %}<a href="{% url 'timetrack:index' %}">This week</a>{% endif %}
+        </span>
+        <a href="?week={{ next_week|date:'Y-m-d' }}">Next »</a>
+    </div>
+    <h2>{{ monday|date:"M j" }} – {{ sunday|date:"M j, Y" }} · {% total week_total %}</h2>
+
+    {% if project_totals %}
+    <table>
+        <thead>
+            <tr><th>Project</th><th class="num">Total</th></tr>
+        </thead>
+        <tbody>
+            {% for project, project_total in project_totals %}
+            <tr><td>{{ project }}</td><td class="num">{% total project_total %}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% for day, info in days %}
+    <h3>{{ day|date:"l, M j" }} · {% total info.total %}</h3>
+    <table>
+        <tbody>
+            {% for interval in info.intervals %}
+            <tr>
+                <td class="nowrap">{{ interval.start|date:"H:i" }}–{% if interval.end %}{{ interval.end|date:"H:i" }}{% else %}…{% endif %}</td>
+                <td>{{ interval.project }}{% if interval.note %}<br><span class="muted">{{ interval.note }}</span>{% endif %}</td>
+                <td class="num">{% duration interval.duration interval.is_running %}</td>
+                <td class="num"><a href="{% url 'timetrack:edit' interval.id %}">edit</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% empty %}
+    <p class="muted">Nothing tracked this week.</p>
+    {% endfor %}
+
+    <p><a href="{% url 'timetrack:add' %}">Add a past entry</a></p>
+</section>
+
+<details>
+    <summary>Daily reminders</summary>
+    <p>
+        Reminders are push notifications sent when the <code>timetrack_remind</code>
+        command runs (e.g. from cron) and nothing has been tracked that day.
+        On iPhone, add this page to your Home Screen first and enable reminders from there.
+    </p>
+    <p class="muted">
+        {{ push_device_count }} device{{ push_device_count|pluralize }} subscribed.
+        Days and weeks use the {{ time_zone }} time zone<span id="tz-warning"></span>.
+    </p>
+    <p id="push-status" class="muted"></p>
+    <button id="push-enable" type="button" hidden>Enable reminders on this device</button>
+    <button id="push-disable" type="button" hidden>Disable reminders on this device</button>
+    <form method="post" action="{% url 'timetrack:push_test' %}" class="inline">
+        {% csrf_token %}
+        <button>Send test notification</button>
+    </form>
+</details>
+
+{{ vapid_public_key|json_script:"vapid-public-key" }}
+{{ time_zone|json_script:"time-zone" }}
+<script>
+    // Keep running durations ticking.
+    (function () {
+        const loaded = Date.now();
+        const live = document.querySelectorAll(".duration[data-live]");
+        if (!live.length) return;
+        function tick() {
+            const extra = Math.floor((Date.now() - loaded) / 1000);
+            for (const el of live) {
+                const minutes = Math.floor((Number(el.dataset.seconds) + extra) / 60);
+                el.textContent = Math.floor(minutes / 60) + ":" + String(minutes % 60).padStart(2, "0");
+            }
+        }
+        setInterval(tick, 15000);
+    })();
+
+    // Time zone mismatch hint.
+    (function () {
+        const configured = JSON.parse(document.getElementById("time-zone").textContent);
+        const browser = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (browser && browser !== configured) {
+            document.getElementById("tz-warning").textContent =
+                " (this device is in " + browser + "; change TIMETRACK_TIME_ZONE in the admin's Config page if that's wrong)";
+        }
+    })();
+
+    // Push notification subscription.
+    (function () {
+        const status = document.getElementById("push-status");
+        const enable = document.getElementById("push-enable");
+        const disable = document.getElementById("push-disable");
+        const csrf = document.querySelector("[name=csrfmiddlewaretoken]").value;
+        const key = JSON.parse(document.getElementById("vapid-public-key").textContent);
+
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+            status.textContent = "This browser doesn't support push notifications here." +
+                (/iPhone|iPad/.test(navigator.userAgent) ? " Add this page to your Home Screen and open it from there." : "");
+            return;
+        }
+
+        function keyBytes(base64url) {
+            const padded = (base64url + "===".slice((base64url.length + 3) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+            return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
+        }
+
+        function post(url, body) {
+            return fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+                body: JSON.stringify(body),
+            }).then((r) => { if (!r.ok) throw new Error("Server returned " + r.status); });
+        }
+
+        function show(subscription) {
+            enable.hidden = !!subscription;
+            disable.hidden = !subscription;
+            status.textContent = subscription ? "Reminders are on for this device." : "";
+        }
+
+        navigator.serviceWorker.register("{% url 'timetrack:service_worker' %}").then((registration) => {
+            registration.pushManager.getSubscription().then((subscription) => {
+                // Re-send in case the server forgot about it.
+                if (subscription) post("{% url 'timetrack:push_subscribe' %}", subscription.toJSON());
+                show(subscription);
+            });
+
+            enable.addEventListener("click", async () => {
+                try {
+                    const permission = await Notification.requestPermission();
+                    if (permission !== "granted") {
+                        status.textContent = "Notification permission was not granted.";
+                        return;
+                    }
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: keyBytes(key),
+                    });
+                    await post("{% url 'timetrack:push_subscribe' %}", subscription.toJSON());
+                    show(subscription);
+                } catch (e) {
+                    status.textContent = "Couldn't enable reminders: " + e.message;
+                }
+            });
+
+            disable.addEventListener("click", async () => {
+                const subscription = await registration.pushManager.getSubscription();
+                if (subscription) {
+                    await post("{% url 'timetrack:push_unsubscribe' %}", { endpoint: subscription.endpoint });
+                    await subscription.unsubscribe();
+                }
+                show(null);
+            });
+        });
+    })();
+</script>
+{% endblock %}

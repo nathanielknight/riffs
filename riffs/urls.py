@@ -26,4 +26,5 @@ urlpatterns = [
     path("bookmarks/", include("bookmarks.urls", namespace="bookmarks")),
     path("dropfeed/", include("dropfeed.urls", namespace="dropfeed")),
     path("share/", include("fileshare.urls", namespace="fileshare")),
+    path("timetrack/", include("timetrack.urls", namespace="timetrack")),
 ]

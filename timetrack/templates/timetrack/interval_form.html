@@ -1,0 +1,22 @@
+{% extends "timetrack/base.html" %}
+
+{% block content %}
+<nav><a href="{% url 'timetrack:index' %}">Back</a></nav>
+
+<h1>{% if interval %}Edit entry{% else %}Add entry{% endif %}</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <p class="muted">Times are rounded to the nearest 5 minutes.</p>
+    <button>Save</button>
+</form>
+
+{% if interval %}
+<form method="post" action="{% url 'timetrack:delete' interval.id %}"
+    onsubmit="return confirm('Delete this entry?')">
+    {% csrf_token %}
+    <button class="link">Delete entry</button>
+</form>
+{% endif %}
+{% endblock %}
