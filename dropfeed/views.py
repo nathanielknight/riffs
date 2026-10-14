@@ -1,7 +1,6 @@
 import secrets
 
 from constance import config
-from constance.models import Constance
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
@@ -25,12 +24,8 @@ def _get_or_create_feed_path():
     # Check if the stored value is empty or looks like a default
     if not path or len(path) < 16:
         new_path = secrets.token_urlsafe(16)
-        # Use the Constance API to save it to the database
-        Constance.objects.update_or_create(
-            key="DROPFEED_URL_PATH", defaults={"value": new_path}
-        )
-        # Update the in-memory config
-        setattr(config, "DROPFEED_URL_PATH", new_path)
+        # Assigning through constance encodes and persists the value.
+        config.DROPFEED_URL_PATH = new_path
         return new_path
     return path
 

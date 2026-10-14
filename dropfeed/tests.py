@@ -14,6 +14,19 @@ from .models import Recording
 from .views import _get_or_create_feed_path
 
 
+class FeedPathTests(TestCase):
+    def test_generates_and_persists_feed_path(self):
+        self.assertEqual(config.DROPFEED_URL_PATH, "")
+        self.client.force_login(User.objects.create_user("user", password="pw"))
+
+        response = self.client.get(reverse("dropfeed:index"))
+        self.assertEqual(response.status_code, 200)
+
+        path = config.DROPFEED_URL_PATH
+        self.assertGreaterEqual(len(path), 16)
+        self.assertEqual(_get_or_create_feed_path(), path)
+
+
 class AudioFormatTests(TestCase):
     def setUp(self):
         self.media_root = tempfile.mkdtemp()
