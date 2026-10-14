@@ -34,6 +34,10 @@ riffs/
 - Bookmarks (save and search links with tags and descriptions)
 - Dropfeed (generate a podcast feed from uploaded audio files)
 - Quotes (admin-only database editing riff)
+- Timetrack (client time tracking: start/stop intervals rounded to 5 minutes, daily/weekly totals, Web Push reminders)
+
+**Timetrack Reminders:**
+`uv run manage.py timetrack_remind` sends a push notification to subscribed devices if nothing has been tracked today (or an interval has been running 10+ hours). It does no scheduling itself; run it from cron at the reminder time. The VAPID key is generated on first use and stored in constance; days/weeks use `TIMETRACK_TIME_ZONE`.
 
 **RSS Feed Implementation:**
 See `dropfeed/views.py:34-81` for RSS generation logic. Uses Django's `Rss201rev2Feed` with custom iTunes namespace extensions.

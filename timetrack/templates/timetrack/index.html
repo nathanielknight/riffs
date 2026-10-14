@@ -1,0 +1,449 @@
+{% extends "timetrack/base.html" %}
+{% load timetrack %}
+
+{% block style %}
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.stats .figure {
+    margin-top: 0.5rem;
+}
+
+.dot {
+    display: inline-block;
+    width: 0.6em;
+    height: 0.6em;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 0.4em;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    50% { opacity: 0.25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dot { animation: none; }
+}
+
+.running {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 0.5rem 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.running .project {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.running .meta {
+    margin-top: 0.35rem;
+}
+
+.quickstart {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.quickstart form {
+    margin: 0;
+}
+
+.quickstart button {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    width: 100%;
+    padding: 0.85rem 0;
+    background: transparent;
+    color: var(--fg);
+    border: 0;
+    border-bottom: 1px solid var(--hair);
+    font-size: 1.25rem;
+    font-weight: 400;
+    text-align: left;
+}
+
+.quickstart li:first-child button {
+    border-top: 1px solid var(--hair);
+}
+
+.quickstart button:hover:not(:disabled) {
+    background: transparent;
+    color: var(--accent);
+}
+
+.quickstart button .label {
+    flex: none;
+}
+
+.quickstart button:disabled .label {
+    color: var(--accent);
+}
+
+.weeknav {
+    display: flex;
+    gap: 1.25rem;
+}
+
+.weeknav a {
+    text-decoration: none;
+}
+
+.weektitle {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.weektitle .figure {
+    font-size: clamp(2.5rem, 11vw, 4rem);
+}
+
+.rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.rows li {
+    display: grid;
+    align-items: baseline;
+    gap: 0 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--hair);
+}
+
+.projects li {
+    grid-template-columns: minmax(0, 1fr) 30% 3.5rem;
+}
+
+.bar {
+    height: 0.5rem;
+    background: var(--hair);
+    align-self: center;
+}
+
+.bar span {
+    display: block;
+    height: 100%;
+    background: var(--fg);
+}
+
+.num {
+    text-align: right;
+}
+
+.day {
+    margin-top: 2.5rem;
+}
+
+.dayhead {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--fg);
+    padding-bottom: 0.35rem;
+}
+
+.entries li {
+    grid-template-columns: 6.5rem minmax(0, 1fr) 3.5rem 2.5rem;
+}
+
+.entries .note {
+    display: block;
+    font-size: 0.875rem;
+}
+
+.entries .edit {
+    font-size: 0.875rem;
+    text-align: right;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+{% endblock %}
+
+{% block masthead %}
+<span class="label">Time Tracker</span>
+<span class="label muted">{{ now|date:"D j M Y" }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="stats">
+    <div>
+        <div class="label">Today</div>
+        <div class="figure">{% total today_total %}</div>
+    </div>
+    <div>
+        <div class="label">This week</div>
+        <div class="figure">{% total this_week_total %}</div>
+    </div>
+</div>
+
+<section>
+    <div class="section-head">
+        <span class="label">{% if running %}<span class="dot"></span>Running{% else %}Now{% endif %}</span>
+    </div>
+    {% if running %}
+    <div class="running">
+        <div>
+            <div class="project">{{ running.project }}</div>
+            <div class="meta muted">
+                {% if running.note %}{{ running.note }} · {% endif %}since {{ running.start|date:"H:i" }}
+                · <a href="{% url 'timetrack:edit' running.id %}">Edit</a>
+            </div>
+        </div>
+        <div class="figure">{% duration running.duration True %}</div>
+    </div>
+    <form method="post" action="{% url 'timetrack:stop' %}" class="inline">
+        {% csrf_token %}
+        <button>Stop</button>
+    </form>
+    <details>
+        <summary>Stop at a different time</summary>
+        <form method="post" action="{% url 'timetrack:stop' %}" class="stack">
+            {% csrf_token %}
+            <div>
+                <label for="stop-end">Ended at</label>
+                <input type="datetime-local" step="300" name="end" id="stop-end" required
+                    value="{{ now|date:'Y-m-d\TH:i' }}">
+            </div>
+            <button>Stop</button>
+        </form>
+    </details>
+    {% else %}
+    <p class="muted">Not tracking anything.</p>
+    {% endif %}
+</section>
+
+<section>
+    <div class="section-head">
+        <span class="label">Start</span>
+    </div>
+    {% if recent_projects %}
+    <ul class="quickstart">
+        {% for project in recent_projects %}
+        <li>
+            <form method="post" action="{% url 'timetrack:start' %}">
+                {% csrf_token %}
+                <input type="hidden" name="project" value="{{ project }}">
+                {% if running and running.project == project %}
+                <button disabled><span>{{ project }}</span><span class="label">Running</span></button>
+                {% else %}
+                <button><span>{{ project }}</span><span class="label">Start →</span></button>
+                {% endif %}
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <details {% if not recent_projects %}open{% endif %}>
+        <summary>New project</summary>
+        <form method="post" action="{% url 'timetrack:start' %}" class="stack">
+            {% csrf_token %}
+            <div>
+                <label for="start-project">Project</label>
+                <input type="text" name="project" id="start-project" list="projects" required>
+            </div>
+            <div>
+                <label for="start-note">Note</label>
+                <input type="text" name="note" id="start-note" placeholder="Optional">
+            </div>
+            <div>
+                <label for="start-start">Started at</label>
+                <input type="datetime-local" step="300" name="start" id="start-start">
+                <span class="helptext">Leave blank for now.</span>
+            </div>
+            <button>Start</button>
+        </form>
+    </details>
+</section>
+
+<section>
+    <div class="section-head">
+        <span class="label">Week {{ monday|date:"W" }}</span>
+        <nav class="weeknav label">
+            <a href="?week={{ prev_week|date:'Y-m-d' }}">← Prev</a>
+            {% if not is_this_week %}<a href="{% url 'timetrack:index' %}">Today</a>{% endif %}
+            <a href="?week={{ next_week|date:'Y-m-d' }}">Next →</a>
+        </nav>
+    </div>
+    <div class="weektitle">
+        <h2>{% if monday.month == sunday.month %}{{ monday|date:"j" }}{% else %}{{ monday|date:"j M" }} {% endif %}–{% if monday.month != sunday.month %} {% endif %}{{ sunday|date:"j M Y" }}</h2>
+        <div class="figure">{% total week_total %}</div>
+    </div>
+
+    {% if project_totals %}
+    <ul class="rows projects">
+        {% for project, project_total in project_totals %}
+        <li>
+            <span>{{ project }}</span>
+            <span class="bar"><span style="width: {% widthratio project_total.duration.total_seconds week_total.duration.total_seconds 100 %}%"></span></span>
+            <span class="num">{% total project_total %}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% for day, info in days %}
+    <div class="day">
+        <div class="dayhead label">
+            <span>{{ day|date:"l j M" }}</span>
+            <span>{% total info.total %}</span>
+        </div>
+        <ol class="rows entries">
+            {% for interval in info.intervals %}
+            <li>
+                <span>{{ interval.start|date:"H:i" }}–{% if interval.end %}{{ interval.end|date:"H:i" }}{% else %}<span class="accent">now</span>{% endif %}</span>
+                <span>{{ interval.project }}{% if interval.note %}<span class="note muted">{{ interval.note }}</span>{% endif %}</span>
+                <span class="num">{% duration interval.duration interval.is_running %}</span>
+                <a class="edit" href="{% url 'timetrack:edit' interval.id %}">Edit</a>
+            </li>
+            {% endfor %}
+        </ol>
+    </div>
+    {% empty %}
+    <p class="muted">Nothing tracked this week.</p>
+    {% endfor %}
+
+    <p style="margin-top: 2rem"><a href="{% url 'timetrack:add' %}">Add a past entry</a></p>
+</section>
+
+<section>
+    <details>
+        <summary>Daily reminders</summary>
+        <p>
+            Reminders are push notifications sent when the <code>timetrack_remind</code>
+            command runs (e.g. from cron) and nothing has been tracked that day.
+            On iPhone, add this page to your Home Screen first and enable reminders from there.
+        </p>
+        <p class="muted">
+            {{ push_device_count }} device{{ push_device_count|pluralize }} subscribed.
+            Days and weeks use the {{ time_zone }} time zone<span id="tz-warning"></span>.
+        </p>
+        <p id="push-status" class="muted"></p>
+        <div class="actions">
+            <button id="push-enable" type="button" hidden>Enable on this device</button>
+            <button id="push-disable" type="button" class="secondary" hidden>Disable on this device</button>
+            <form method="post" action="{% url 'timetrack:push_test' %}" class="inline">
+                {% csrf_token %}
+                <button class="secondary">Send test notification</button>
+            </form>
+        </div>
+    </details>
+</section>
+
+{{ vapid_public_key|json_script:"vapid-public-key" }}
+{{ time_zone|json_script:"time-zone" }}
+<script>
+    // Keep running durations ticking.
+    (function () {
+        const loaded = Date.now();
+        const live = document.querySelectorAll(".duration[data-live]");
+        if (!live.length) return;
+        function tick() {
+            const extra = Math.floor((Date.now() - loaded) / 1000);
+            for (const el of live) {
+                const minutes = Math.floor((Number(el.dataset.seconds) + extra) / 60);
+                el.textContent = Math.floor(minutes / 60) + ":" + String(minutes % 60).padStart(2, "0");
+            }
+        }
+        setInterval(tick, 15000);
+    })();
+
+    // Time zone mismatch hint.
+    (function () {
+        const configured = JSON.parse(document.getElementById("time-zone").textContent);
+        const browser = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (browser && browser !== configured) {
+            document.getElementById("tz-warning").textContent =
+                " (this device is in " + browser + "; change TIMETRACK_TIME_ZONE in the admin's Config page if that's wrong)";
+        }
+    })();
+
+    // Push notification subscription.
+    (function () {
+        const status = document.getElementById("push-status");
+        const enable = document.getElementById("push-enable");
+        const disable = document.getElementById("push-disable");
+        const csrf = document.querySelector("[name=csrfmiddlewaretoken]").value;
+        const key = JSON.parse(document.getElementById("vapid-public-key").textContent);
+
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+            status.textContent = "This browser doesn't support push notifications here." +
+                (/iPhone|iPad/.test(navigator.userAgent) ? " Add this page to your Home Screen and open it from there." : "");
+            return;
+        }
+
+        function keyBytes(base64url) {
+            const padded = (base64url + "===".slice((base64url.length + 3) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+            return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
+        }
+
+        function post(url, body) {
+            return fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+                body: JSON.stringify(body),
+            }).then((r) => { if (!r.ok) throw new Error("Server returned " + r.status); });
+        }
+
+        function show(subscription) {
+            enable.hidden = !!subscription;
+            disable.hidden = !subscription;
+            status.textContent = subscription ? "Reminders are on for this device." : "";
+        }
+
+        navigator.serviceWorker.register("{% url 'timetrack:service_worker' %}").then((registration) => {
+            registration.pushManager.getSubscription().then((subscription) => {
+                // Re-send in case the server forgot about it.
+                if (subscription) post("{% url 'timetrack:push_subscribe' %}", subscription.toJSON());
+                show(subscription);
+            });
+
+            enable.addEventListener("click", async () => {
+                try {
+                    const permission = await Notification.requestPermission();
+                    if (permission !== "granted") {
+                        status.textContent = "Notification permission was not granted.";
+                        return;
+                    }
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: keyBytes(key),
+                    });
+                    await post("{% url 'timetrack:push_subscribe' %}", subscription.toJSON());
+                    show(subscription);
+                } catch (e) {
+                    status.textContent = "Couldn't enable reminders: " + e.message;
+                }
+            });
+
+            disable.addEventListener("click", async () => {
+                const subscription = await registration.pushManager.getSubscription();
+                if (subscription) {
+                    await post("{% url 'timetrack:push_unsubscribe' %}", { endpoint: subscription.endpoint });
+                    await subscription.unsubscribe();
+                }
+                show(null);
+            });
+        });
+    })();
+</script>
+{% endblock %}

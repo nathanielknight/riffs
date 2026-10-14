@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "quotes",
     "dropfeed",
     "fileshare",
+    "timetrack",
 ]
 
 MIDDLEWARE = [
@@ -161,6 +162,18 @@ CONSTANCE_CONFIG = {
         "URL path for RSS feed (automatically generated if empty)",
     ),
     "DROPFEED_EXPLICIT": (False, "Whether the podcast contains explicit content"),
+    "TIMETRACK_TIME_ZONE": (
+        "UTC",
+        "IANA time zone used for days, weeks and reminders (e.g. America/Toronto)",
+    ),
+    "TIMETRACK_PUSH_CONTACT": (
+        "mailto:admin@example.com",
+        "Contact (mailto: or https: URL) sent to push services with reminders",
+    ),
+    "TIMETRACK_VAPID_PRIVATE_KEY": (
+        "",
+        "Web Push signing key (automatically generated if empty)",
+    ),
 }
 CONSTANCE_CONFIG_FIELDSETS = {
     "DropFeed Podcast Settings": {
@@ -170,6 +183,14 @@ CONSTANCE_CONFIG_FIELDSETS = {
             "DROPFEED_AUTHOR",
             "DROPFEED_URL_PATH",
             "DROPFEED_EXPLICIT",
+        ),
+        "collapse": False,
+    },
+    "Time Tracker Settings": {
+        "fields": (
+            "TIMETRACK_TIME_ZONE",
+            "TIMETRACK_PUSH_CONTACT",
+            "TIMETRACK_VAPID_PRIVATE_KEY",
         ),
         "collapse": False,
     },

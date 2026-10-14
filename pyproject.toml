@@ -8,6 +8,7 @@ dependencies = [
     "django>=6.0",
     "django-constance>=4.3.2",
     "django-taggit>=6.1.0",
+    "pywebpush>=2.5.0",
     "waitress>=3.0.2",
     "whitenoise>=6.9.0",
 ]

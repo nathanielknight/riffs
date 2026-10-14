@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Time Tracker{% endblock %}</title>
+    <link rel="manifest" href="{% url 'timetrack:manifest' %}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Timetrack">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0b0b0b" media="(prefers-color-scheme: dark)">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --fg: #000000;
+            --muted: #6b6b6b;
+            --hair: #d4d4d4;
+            --accent: #e30613;
+            color-scheme: light dark;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0b0b0b;
+                --fg: #f2f2f2;
+                --muted: #8c8c8c;
+                --hair: #333333;
+                --accent: #ff3b30;
+            }
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font: 16px/1.4 "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-variant-numeric: tabular-nums;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        main {
+            max-width: 46rem;
+            margin: 0 auto;
+            padding: 1.25rem 1rem 5rem;
+        }
+
+        a {
+            color: inherit;
+            text-decoration-thickness: 1px;
+            text-underline-offset: 0.2em;
+        }
+
+        a:hover {
+            color: var(--accent);
+        }
+
+        h1,
+        h2 {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.05;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            font-size: 1.75rem;
+        }
+
+        p {
+            margin: 0 0 1rem;
+            max-width: 34rem;
+        }
+
+        .label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .accent {
+            color: var(--accent);
+        }
+
+        /* Structure: a heavy rule on top, hairlines within. */
+        .masthead {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 1rem;
+            border-top: 4px solid var(--fg);
+            padding-top: 0.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .masthead a {
+            text-decoration: none;
+        }
+
+        section {
+            border-top: 1px solid var(--fg);
+            padding-top: 0.5rem;
+            margin-top: 3rem;
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .figure {
+            font-size: clamp(3.25rem, 15vw, 5.5rem);
+            font-weight: 700;
+            letter-spacing: -0.045em;
+            line-height: 0.95;
+        }
+
+        /* Controls */
+        button {
+            font: inherit;
+            font-weight: 700;
+            color: var(--bg);
+            background: var(--fg);
+            border: 1px solid var(--fg);
+            border-radius: 0;
+            padding: 0.7rem 1.25rem;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        button.secondary {
+            background: transparent;
+            color: var(--fg);
+        }
+
+        button.link {
+            background: none;
+            border: none;
+            padding: 0;
+            font-weight: 400;
+            color: var(--fg);
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+            text-underline-offset: 0.2em;
+        }
+
+        button.link:hover:not(:disabled) {
+            background: none;
+            color: var(--accent);
+        }
+
+        button:disabled {
+            cursor: default;
+        }
+
+        input {
+            font: inherit;
+            color: inherit;
+            background: transparent;
+            border: 1px solid var(--fg);
+            border-radius: 0;
+            padding: 0.6rem;
+            width: 100%;
+            min-height: 2.75rem;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input:focus,
+        button:focus-visible,
+        summary:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 1px;
+        }
+
+        form.stack,
+        form.stack>div {
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        form.stack {
+            gap: 1.25rem;
+            max-width: 30rem;
+        }
+
+        form.stack label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        form.stack .helptext {
+            color: var(--muted);
+            font-size: 0.875rem;
+            order: 3;
+        }
+
+        form.stack button {
+            justify-self: start;
+        }
+
+        .errorlist {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        form.inline {
+            display: inline;
+            margin: 0;
+        }
+
+        details {
+            margin-top: 1.25rem;
+        }
+
+        summary {
+            list-style: none;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        summary::before {
+            content: "+";
+            display: inline-block;
+            width: 1.25em;
+        }
+
+        details[open]>summary::before {
+            content: "−";
+        }
+
+        details[open]>summary {
+            margin-bottom: 1rem;
+        }
+
+        .messages {
+            list-style: none;
+            margin: -1.5rem 0 2rem;
+            padding: 0 0 0 0.75rem;
+            border-left: 4px solid var(--fg);
+        }
+
+        .messages .error {
+            color: var(--accent);
+        }
+
+        {% block style %}{% endblock %}
+    </style>
+</head>
+
+<body>
+    <main>
+        <header class="masthead">
+            {% block masthead %}
+            <a class="label" href="{% url 'timetrack:index' %}">Time Tracker</a>
+            {% endblock %}
+        </header>
+
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+
+        <datalist id="projects">
+            {% for project in all_projects %}
+            <option value="{{ project }}">
+            {% endfor %}
+        </datalist>
+    </main>
+</body>
+
+</html>
