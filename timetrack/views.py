@@ -233,7 +233,7 @@ def manifest(request):
         "scope": reverse("timetrack:index"),
         "display": "standalone",
         "background_color": "#ffffff",
-        "theme_color": "#0d47a1",
+        "theme_color": "#000000",
     }
     return JsonResponse(data, content_type="application/manifest+json")
 

@@ -163,7 +163,11 @@ class TimetrackViewTests(TestCase):
         )
         response = self.client.get(reverse("timetrack:index"))
         self.assertEqual(response.context["recent_projects"], ["Acme remote", "Old"])
-        self.assertContains(response, "▶ Acme remote")
+        self.assertContains(
+            response,
+            '<span>Acme remote</span><span class="label">Start →</span>',
+            html=False,
+        )
 
     def test_push_subscribe_and_unsubscribe(self):
         sub = {

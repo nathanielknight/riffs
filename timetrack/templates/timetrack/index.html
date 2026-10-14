@@ -1,134 +1,353 @@
 {% extends "timetrack/base.html" %}
 {% load timetrack %}
 
-{% block content %}
-<h1>Time Tracker</h1>
+{% block style %}
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
 
+.stats .figure {
+    margin-top: 0.5rem;
+}
+
+.dot {
+    display: inline-block;
+    width: 0.6em;
+    height: 0.6em;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 0.4em;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    50% { opacity: 0.25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dot { animation: none; }
+}
+
+.running {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 0.5rem 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.running .project {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.running .meta {
+    margin-top: 0.35rem;
+}
+
+.quickstart {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.quickstart form {
+    margin: 0;
+}
+
+.quickstart button {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    width: 100%;
+    padding: 0.85rem 0;
+    background: transparent;
+    color: var(--fg);
+    border: 0;
+    border-bottom: 1px solid var(--hair);
+    font-size: 1.25rem;
+    font-weight: 400;
+    text-align: left;
+}
+
+.quickstart li:first-child button {
+    border-top: 1px solid var(--hair);
+}
+
+.quickstart button:hover:not(:disabled) {
+    background: transparent;
+    color: var(--accent);
+}
+
+.quickstart button .label {
+    flex: none;
+}
+
+.quickstart button:disabled .label {
+    color: var(--accent);
+}
+
+.weeknav {
+    display: flex;
+    gap: 1.25rem;
+}
+
+.weeknav a {
+    text-decoration: none;
+}
+
+.weektitle {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.weektitle .figure {
+    font-size: clamp(2.5rem, 11vw, 4rem);
+}
+
+.rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.rows li {
+    display: grid;
+    align-items: baseline;
+    gap: 0 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--hair);
+}
+
+.projects li {
+    grid-template-columns: minmax(0, 1fr) 30% 3.5rem;
+}
+
+.bar {
+    height: 0.5rem;
+    background: var(--hair);
+    align-self: center;
+}
+
+.bar span {
+    display: block;
+    height: 100%;
+    background: var(--fg);
+}
+
+.num {
+    text-align: right;
+}
+
+.day {
+    margin-top: 2.5rem;
+}
+
+.dayhead {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--fg);
+    padding-bottom: 0.35rem;
+}
+
+.entries li {
+    grid-template-columns: 6.5rem minmax(0, 1fr) 3.5rem 2.5rem;
+}
+
+.entries .note {
+    display: block;
+    font-size: 0.875rem;
+}
+
+.entries .edit {
+    font-size: 0.875rem;
+    text-align: right;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+{% endblock %}
+
+{% block masthead %}
+<span class="label">Time Tracker</span>
+<span class="label muted">{{ now|date:"D j M Y" }}</span>
+{% endblock %}
+
+{% block content %}
 <div class="stats">
-    <div>Today <strong>{% total today_total %}</strong></div>
-    <div>This week <strong>{% total this_week_total %}</strong></div>
+    <div>
+        <div class="label">Today</div>
+        <div class="figure">{% total today_total %}</div>
+    </div>
+    <div>
+        <div class="label">This week</div>
+        <div class="figure">{% total this_week_total %}</div>
+    </div>
 </div>
 
 <section>
-    {% if running %}
-    <div class="running notice">
-        <div>
-            <div><strong>{{ running.project }}</strong>{% if running.note %} — {{ running.note }}{% endif %}</div>
-            <div class="muted">since {{ running.start|date:"D H:i" }} · <a href="{% url 'timetrack:edit' running.id %}">edit</a></div>
-        </div>
-        <div class="elapsed">{% duration running.duration True %}</div>
-        <form method="post" action="{% url 'timetrack:stop' %}" class="inline">
-            {% csrf_token %}
-            <button>Stop</button>
-        </form>
+    <div class="section-head">
+        <span class="label">{% if running %}<span class="dot"></span>Running{% else %}Now{% endif %}</span>
     </div>
+    {% if running %}
+    <div class="running">
+        <div>
+            <div class="project">{{ running.project }}</div>
+            <div class="meta muted">
+                {% if running.note %}{{ running.note }} · {% endif %}since {{ running.start|date:"H:i" }}
+                · <a href="{% url 'timetrack:edit' running.id %}">Edit</a>
+            </div>
+        </div>
+        <div class="figure">{% duration running.duration True %}</div>
+    </div>
+    <form method="post" action="{% url 'timetrack:stop' %}" class="inline">
+        {% csrf_token %}
+        <button>Stop</button>
+    </form>
     <details>
         <summary>Stop at a different time</summary>
-        <form method="post" action="{% url 'timetrack:stop' %}">
+        <form method="post" action="{% url 'timetrack:stop' %}" class="stack">
             {% csrf_token %}
-            <label for="stop-end">Ended at</label>
-            <input type="datetime-local" step="300" name="end" id="stop-end" required
-                value="{{ now|date:'Y-m-d\TH:i' }}">
+            <div>
+                <label for="stop-end">Ended at</label>
+                <input type="datetime-local" step="300" name="end" id="stop-end" required
+                    value="{{ now|date:'Y-m-d\TH:i' }}">
+            </div>
             <button>Stop</button>
         </form>
     </details>
     {% else %}
-    <p class="muted">Not tracking anything right now.</p>
+    <p class="muted">Not tracking anything.</p>
     {% endif %}
 </section>
 
-{% if recent_projects %}
 <section>
-    <h3>Start again</h3>
-    <div class="quickstart">
+    <div class="section-head">
+        <span class="label">Start</span>
+    </div>
+    {% if recent_projects %}
+    <ul class="quickstart">
         {% for project in recent_projects %}
-        <form method="post" action="{% url 'timetrack:start' %}">
-            {% csrf_token %}
-            <input type="hidden" name="project" value="{{ project }}">
-            <button {% if running and running.project == project %}disabled{% endif %}>▶ {{ project }}</button>
-        </form>
+        <li>
+            <form method="post" action="{% url 'timetrack:start' %}">
+                {% csrf_token %}
+                <input type="hidden" name="project" value="{{ project }}">
+                {% if running and running.project == project %}
+                <button disabled><span>{{ project }}</span><span class="label">Running</span></button>
+                {% else %}
+                <button><span>{{ project }}</span><span class="label">Start →</span></button>
+                {% endif %}
+            </form>
+        </li>
         {% endfor %}
-    </div>
+    </ul>
+    {% endif %}
+    <details {% if not recent_projects %}open{% endif %}>
+        <summary>New project</summary>
+        <form method="post" action="{% url 'timetrack:start' %}" class="stack">
+            {% csrf_token %}
+            <div>
+                <label for="start-project">Project</label>
+                <input type="text" name="project" id="start-project" list="projects" required>
+            </div>
+            <div>
+                <label for="start-note">Note</label>
+                <input type="text" name="note" id="start-note" placeholder="Optional">
+            </div>
+            <div>
+                <label for="start-start">Started at</label>
+                <input type="datetime-local" step="300" name="start" id="start-start">
+                <span class="helptext">Leave blank for now.</span>
+            </div>
+            <button>Start</button>
+        </form>
+    </details>
 </section>
-{% endif %}
-
-<details {% if not recent_projects %}open{% endif %}>
-    <summary>Start something new</summary>
-    <form method="post" action="{% url 'timetrack:start' %}">
-        {% csrf_token %}
-        <label for="start-project">Project</label>
-        <input type="text" name="project" id="start-project" list="projects" required>
-        <label for="start-note">Note (optional)</label>
-        <input type="text" name="note" id="start-note">
-        <label for="start-start">Started at (blank for now)</label>
-        <input type="datetime-local" step="300" name="start" id="start-start">
-        <button>Start</button>
-    </form>
-</details>
 
 <section>
-    <div class="weeknav">
-        <a href="?week={{ prev_week|date:'Y-m-d' }}">« Previous</a>
-        <span>
-            {% if not is_this_week %}<a href="{% url 'timetrack:index' %}">This week</a>{% endif %}
-        </span>
-        <a href="?week={{ next_week|date:'Y-m-d' }}">Next »</a>
+    <div class="section-head">
+        <span class="label">Week {{ monday|date:"W" }}</span>
+        <nav class="weeknav label">
+            <a href="?week={{ prev_week|date:'Y-m-d' }}">← Prev</a>
+            {% if not is_this_week %}<a href="{% url 'timetrack:index' %}">Today</a>{% endif %}
+            <a href="?week={{ next_week|date:'Y-m-d' }}">Next →</a>
+        </nav>
     </div>
-    <h2>{{ monday|date:"M j" }} – {{ sunday|date:"M j, Y" }} · {% total week_total %}</h2>
+    <div class="weektitle">
+        <h2>{% if monday.month == sunday.month %}{{ monday|date:"j" }}{% else %}{{ monday|date:"j M" }} {% endif %}–{% if monday.month != sunday.month %} {% endif %}{{ sunday|date:"j M Y" }}</h2>
+        <div class="figure">{% total week_total %}</div>
+    </div>
 
     {% if project_totals %}
-    <table>
-        <thead>
-            <tr><th>Project</th><th class="num">Total</th></tr>
-        </thead>
-        <tbody>
-            {% for project, project_total in project_totals %}
-            <tr><td>{{ project }}</td><td class="num">{% total project_total %}</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <ul class="rows projects">
+        {% for project, project_total in project_totals %}
+        <li>
+            <span>{{ project }}</span>
+            <span class="bar"><span style="width: {% widthratio project_total.duration.total_seconds week_total.duration.total_seconds 100 %}%"></span></span>
+            <span class="num">{% total project_total %}</span>
+        </li>
+        {% endfor %}
+    </ul>
     {% endif %}
 
     {% for day, info in days %}
-    <h3>{{ day|date:"l, M j" }} · {% total info.total %}</h3>
-    <table>
-        <tbody>
+    <div class="day">
+        <div class="dayhead label">
+            <span>{{ day|date:"l j M" }}</span>
+            <span>{% total info.total %}</span>
+        </div>
+        <ol class="rows entries">
             {% for interval in info.intervals %}
-            <tr>
-                <td class="nowrap">{{ interval.start|date:"H:i" }}–{% if interval.end %}{{ interval.end|date:"H:i" }}{% else %}…{% endif %}</td>
-                <td>{{ interval.project }}{% if interval.note %}<br><span class="muted">{{ interval.note }}</span>{% endif %}</td>
-                <td class="num">{% duration interval.duration interval.is_running %}</td>
-                <td class="num"><a href="{% url 'timetrack:edit' interval.id %}">edit</a></td>
-            </tr>
+            <li>
+                <span>{{ interval.start|date:"H:i" }}–{% if interval.end %}{{ interval.end|date:"H:i" }}{% else %}<span class="accent">now</span>{% endif %}</span>
+                <span>{{ interval.project }}{% if interval.note %}<span class="note muted">{{ interval.note }}</span>{% endif %}</span>
+                <span class="num">{% duration interval.duration interval.is_running %}</span>
+                <a class="edit" href="{% url 'timetrack:edit' interval.id %}">Edit</a>
+            </li>
             {% endfor %}
-        </tbody>
-    </table>
+        </ol>
+    </div>
     {% empty %}
     <p class="muted">Nothing tracked this week.</p>
     {% endfor %}
 
-    <p><a href="{% url 'timetrack:add' %}">Add a past entry</a></p>
+    <p style="margin-top: 2rem"><a href="{% url 'timetrack:add' %}">Add a past entry</a></p>
 </section>
 
-<details>
-    <summary>Daily reminders</summary>
-    <p>
-        Reminders are push notifications sent when the <code>timetrack_remind</code>
-        command runs (e.g. from cron) and nothing has been tracked that day.
-        On iPhone, add this page to your Home Screen first and enable reminders from there.
-    </p>
-    <p class="muted">
-        {{ push_device_count }} device{{ push_device_count|pluralize }} subscribed.
-        Days and weeks use the {{ time_zone }} time zone<span id="tz-warning"></span>.
-    </p>
-    <p id="push-status" class="muted"></p>
-    <button id="push-enable" type="button" hidden>Enable reminders on this device</button>
-    <button id="push-disable" type="button" hidden>Disable reminders on this device</button>
-    <form method="post" action="{% url 'timetrack:push_test' %}" class="inline">
-        {% csrf_token %}
-        <button>Send test notification</button>
-    </form>
-</details>
+<section>
+    <details>
+        <summary>Daily reminders</summary>
+        <p>
+            Reminders are push notifications sent when the <code>timetrack_remind</code>
+            command runs (e.g. from cron) and nothing has been tracked that day.
+            On iPhone, add this page to your Home Screen first and enable reminders from there.
+        </p>
+        <p class="muted">
+            {{ push_device_count }} device{{ push_device_count|pluralize }} subscribed.
+            Days and weeks use the {{ time_zone }} time zone<span id="tz-warning"></span>.
+        </p>
+        <p id="push-status" class="muted"></p>
+        <div class="actions">
+            <button id="push-enable" type="button" hidden>Enable on this device</button>
+            <button id="push-disable" type="button" class="secondary" hidden>Disable on this device</button>
+            <form method="post" action="{% url 'timetrack:push_test' %}" class="inline">
+                {% csrf_token %}
+                <button class="secondary">Send test notification</button>
+            </form>
+        </div>
+    </details>
+</section>
 
 {{ vapid_public_key|json_script:"vapid-public-key" }}
 {{ time_zone|json_script:"time-zone" }}

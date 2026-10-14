@@ -13,6 +13,8 @@ class DateTimeInput(forms.DateTimeInput):
 
 
 class IntervalForm(forms.ModelForm):
+    label_suffix = ""
+
     class Meta:
         model = Interval
         fields = ["project", "note", "start", "end"]
