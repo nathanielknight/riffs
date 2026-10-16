@@ -149,12 +149,19 @@ class TimetrackViewTests(TestCase):
         )
         self.assertContains(response, "3:30")
 
-    def test_recent_projects_offered_for_quick_start(self):
+    def test_recent_tasks_offered_for_quick_start(self):
         Interval.objects.create(
             project="Old", start=local(2026, 10, 1, 9), end=local(2026, 10, 1, 10)
         )
         Interval.objects.create(
             project="Acme remote",
+            note="Standup",
+            start=local(2026, 10, 12, 9),
+            end=local(2026, 10, 12, 10),
+        )
+        Interval.objects.create(
+            project="Acme remote",
+            note="Code review",
             start=local(2026, 10, 13, 9),
             end=local(2026, 10, 13, 10),
         )
@@ -162,12 +169,26 @@ class TimetrackViewTests(TestCase):
             project="Old", start=local(2026, 9, 1, 9), end=local(2026, 9, 1, 10)
         )
         response = self.client.get(reverse("timetrack:index"))
-        self.assertEqual(response.context["recent_projects"], ["Acme remote", "Old"])
+        self.assertEqual(
+            response.context["recent_tasks"],
+            [("Acme remote", "Code review"), ("Acme remote", "Standup"), ("Old", "")],
+        )
         self.assertContains(
             response,
-            '<span>Acme remote</span><span class="label">Start →</span>',
+            '<span>Acme remote<span class="note">Code review</span></span>'
+            '<span class="label">Start →</span>',
             html=False,
         )
+        self.assertContains(
+            response, '<input type="hidden" name="note" value="Standup">', html=False
+        )
+
+    def test_quick_start_carries_note(self):
+        self.client.post(
+            reverse("timetrack:start"), {"project": "Acme", "note": "Standup"}
+        )
+        running = Interval.running()
+        self.assertEqual((running.project, running.note), ("Acme", "Standup"))
 
     def test_push_subscribe_and_unsubscribe(self):
         sub = {

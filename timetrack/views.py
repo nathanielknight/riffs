@@ -19,7 +19,7 @@ from . import push
 from .forms import IntervalForm
 from .models import Interval, PushSubscription, round_time
 
-RECENT_PROJECT_COUNT = 8
+RECENT_TASK_COUNT = 8
 
 
 TZ_COOKIE = "timetrack_tz"
@@ -82,12 +82,14 @@ def total_between(start, end, now):
     return total
 
 
-def recent_projects():
-    return list(
-        Interval.objects.values_list("project", flat=True)
+def recent_tasks():
+    """Recently used (project, note) pairs, most recent first."""
+    return [
+        (project, note)
+        for project, note, _ in Interval.objects.values_list("project", "note")
         .annotate(last_used=Max("start"))
-        .order_by("-last_used")[:RECENT_PROJECT_COUNT]
-    )
+        .order_by("-last_used")[:RECENT_TASK_COUNT]
+    ]
 
 
 def parse_local_datetime(value):
@@ -131,7 +133,7 @@ def index(request):
     context = {
         "now": now,
         "running": Interval.running(),
-        "recent_projects": recent_projects(),
+        "recent_tasks": recent_tasks(),
         "all_projects": Interval.objects.values_list("project", flat=True)
         .distinct()
         .order_by("project"),
