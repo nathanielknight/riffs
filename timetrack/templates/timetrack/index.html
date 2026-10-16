@@ -88,6 +88,12 @@
     flex: none;
 }
 
+.quickstart button .note {
+    display: block;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
 .quickstart button:disabled .label {
     color: var(--accent);
 }
@@ -236,24 +242,25 @@
     <div class="section-head">
         <span class="label">Start</span>
     </div>
-    {% if recent_projects %}
+    {% if recent_tasks %}
     <ul class="quickstart">
-        {% for project in recent_projects %}
+        {% for project, note in recent_tasks %}
         <li>
             <form method="post" action="{% url 'timetrack:start' %}">
                 {% csrf_token %}
                 <input type="hidden" name="project" value="{{ project }}">
-                {% if running and running.project == project %}
-                <button disabled><span>{{ project }}</span><span class="label">Running</span></button>
+                <input type="hidden" name="note" value="{{ note }}">
+                {% if running and running.project == project and running.note == note %}
+                <button disabled><span>{{ project }}{% if note %}<span class="note">{{ note }}</span>{% endif %}</span><span class="label">Running</span></button>
                 {% else %}
-                <button><span>{{ project }}</span><span class="label">Start →</span></button>
+                <button><span>{{ project }}{% if note %}<span class="note">{{ note }}</span>{% endif %}</span><span class="label">Start →</span></button>
                 {% endif %}
             </form>
         </li>
         {% endfor %}
     </ul>
     {% endif %}
-    <details {% if not recent_projects %}open{% endif %}>
+    <details {% if not recent_tasks %}open{% endif %}>
         <summary>New project</summary>
         <form method="post" action="{% url 'timetrack:start' %}" class="stack">
             {% csrf_token %}
