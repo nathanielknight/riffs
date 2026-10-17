@@ -1,0 +1,38 @@
+{% if recent_tasks %}
+<ul class="quickstart">
+    {% for project, note in recent_tasks %}
+    <li>
+        <form method="post" action="{% url 'timetrack:start' %}">
+            {% csrf_token %}
+            <input type="hidden" name="project" value="{{ project }}">
+            <input type="hidden" name="note" value="{{ note }}">
+            {% if running and running.project == project and running.note == note %}
+            <button disabled><span>{{ project }}{% if note %}<span class="note">{{ note }}</span>{% endif %}</span><span class="label">Running</span></button>
+            {% else %}
+            <button><span>{{ project }}{% if note %}<span class="note">{{ note }}</span>{% endif %}</span><span class="label">Start →</span></button>
+            {% endif %}
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+<details {% if not recent_tasks %}open{% endif %}>
+    <summary>New task</summary>
+    <form method="post" action="{% url 'timetrack:start' %}" class="stack">
+        {% csrf_token %}
+        <div>
+            <label for="start-project">Project</label>
+            <input type="text" name="project" id="start-project" list="projects" required>
+        </div>
+        <div>
+            <label for="start-note">Note</label>
+            <input type="text" name="note" id="start-note" placeholder="Optional">
+        </div>
+        <div>
+            <label for="start-start">Started at</label>
+            <input type="datetime-local" step="300" name="start" id="start-start">
+            <span class="helptext">Leave blank for now.</span>
+        </div>
+        <button>Start</button>
+    </form>
+</details>

@@ -1,0 +1,36 @@
+{% extends "timetrack/base.html" %}
+{% load timetrack %}
+
+{% block title %}Weeks · Time Tracker{% endblock %}
+
+{% block style %}
+.weeks li {
+    grid-template-columns: 4.5rem minmax(0, 1fr) 3.5rem;
+}
+
+.weeks a {
+    text-decoration: none;
+}
+{% endblock %}
+
+{% block masthead %}
+<a class="label" href="{% url 'timetrack:index' %}">← Time Tracker</a>
+{% endblock %}
+
+{% block content %}
+<h1>Weeks</h1>
+
+{% if weeks %}
+<ul class="rows weeks">
+    {% for week in weeks %}
+    <li>
+        <span class="label muted">Week {{ week.monday|date:"W" }}</span>
+        <a href="{% url 'timetrack:week' week.monday|date:'Y-m-d' %}">{% week_range week.monday week.sunday %}</a>
+        <span class="num">{% total week.total %}</span>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="muted">Nothing tracked yet.</p>
+{% endif %}
+{% endblock %}
