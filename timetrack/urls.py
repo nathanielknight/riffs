@@ -6,6 +6,8 @@ app_name = "timetrack"
 
 urlpatterns = [
     path("", views.index, name="index"),
+    path("weeks", views.weeks, name="weeks"),
+    path("weeks/<str:date>", views.week, name="week"),
     path("start", views.start, name="start"),
     path("stop", views.stop, name="stop"),
     path("add", views.add_interval, name="add"),

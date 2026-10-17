@@ -113,13 +113,16 @@ class TimetrackViewTests(TestCase):
         self.client.post(reverse("timetrack:delete", args=[interval.id]))
         self.assertFalse(Interval.objects.exists())
 
-    def test_week_view_totals(self):
+    def make_week(self):
         # Monday and Tuesday of the week of 2026-10-12, plus one the week before.
         Interval.objects.create(
             project="Acme", start=local(2026, 10, 12, 9), end=local(2026, 10, 12, 11)
         )
         Interval.objects.create(
-            project="Acme", start=local(2026, 10, 13, 9), end=local(2026, 10, 13, 9, 30)
+            project="Acme",
+            note="Standup",
+            start=local(2026, 10, 13, 9),
+            end=local(2026, 10, 13, 9, 30),
         )
         Interval.objects.create(
             project="Other", start=local(2026, 10, 13, 22), end=local(2026, 10, 13, 23)
@@ -127,7 +130,10 @@ class TimetrackViewTests(TestCase):
         Interval.objects.create(
             project="Old", start=local(2026, 10, 11, 9), end=local(2026, 10, 11, 10)
         )
-        response = self.client.get(reverse("timetrack:index"), {"week": "2026-10-15"})
+
+    def test_week_view_totals(self):
+        self.make_week()
+        response = self.client.get(reverse("timetrack:week", args=["2026-10-15"]))
         ctx = response.context
         self.assertEqual(ctx["monday"], datetime.date(2026, 10, 12))
         self.assertEqual(
@@ -141,13 +147,93 @@ class TimetrackViewTests(TestCase):
                 "Other": datetime.timedelta(hours=1),
             },
         )
-        days = dict(ctx["days"])
-        # 22:00 Toronto on the 13th is the 14th in UTC; it should count on the 13th.
+        days = {day: (total, dict(projects)) for day, total, projects in ctx["days"]}
         self.assertEqual(
-            days[datetime.date(2026, 10, 13)]["total"].duration,
-            datetime.timedelta(hours=1, minutes=30),
+            list(days), [datetime.date(2026, 10, 12), datetime.date(2026, 10, 13)]
         )
+        # 22:00 Toronto on the 13th is the 14th in UTC; it should count on the 13th.
+        total, projects = days[datetime.date(2026, 10, 13)]
+        self.assertEqual(total.duration, datetime.timedelta(hours=1, minutes=30))
+        self.assertEqual(
+            projects["Acme"]["total"].duration, datetime.timedelta(minutes=30)
+        )
+        self.assertEqual(projects["Acme"]["notes"], ["Standup"])
         self.assertContains(response, "3:30")
+        self.assertContains(response, '<span class="num muted">0.50</span>')
+
+    def test_week_view_rejects_bad_date(self):
+        response = self.client.get(reverse("timetrack:week", args=["nope"]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_weeks_list(self):
+        self.make_week()
+        # ISO week 1 of 2026 starts on Monday 2025-12-29.
+        Interval.objects.create(
+            project="Acme", start=local(2025, 12, 30, 9), end=local(2025, 12, 30, 10)
+        )
+        Interval.objects.create(
+            project="Acme", start=local(2025, 6, 2, 9), end=local(2025, 6, 2, 11)
+        )
+        response = self.client.get(reverse("timetrack:weeks"))
+        years = [
+            (
+                y["year"],
+                y["total"].duration,
+                [(w["monday"], w["total"].duration) for w in y["weeks"]],
+            )
+            for y in response.context["years"]
+        ]
+        hours = datetime.timedelta(hours=1)
+        self.assertEqual(
+            years,
+            [
+                (
+                    2026,
+                    5.5 * hours,
+                    [
+                        (datetime.date(2026, 10, 12), 3.5 * hours),
+                        (datetime.date(2026, 10, 5), hours),
+                        (datetime.date(2025, 12, 29), hours),
+                    ],
+                ),
+                (2025, 2 * hours, [(datetime.date(2025, 6, 2), 2 * hours)]),
+            ],
+        )
+        self.assertContains(response, reverse("timetrack:week", args=["2026-10-12"]))
+
+    def test_index_shows_current_week_only(self):
+        self.make_week()
+        today = local(2026, 10, 14, 12)
+        with mock.patch("django.utils.timezone.now", return_value=today):
+            response = self.client.get(reverse("timetrack:index"))
+        ctx = response.context
+        self.assertEqual(ctx["monday"], datetime.date(2026, 10, 12))
+        days = dict(ctx["days"])
+        self.assertEqual(
+            list(days), [datetime.date(2026, 10, 13), datetime.date(2026, 10, 12)]
+        )
+        self.assertEqual(
+            ctx["week_total"].duration, datetime.timedelta(hours=3, minutes=30)
+        )
+
+    def test_index_start_controls_only_when_idle(self):
+        response = self.client.get(reverse("timetrack:index"))
+        self.assertContains(response, "Not tracking")
+        self.assertNotContains(response, "Switch task")
+        Interval.objects.create(project="A", start=local(2026, 10, 14, 9))
+        response = self.client.get(reverse("timetrack:index"))
+        self.assertNotContains(response, "Not tracking")
+        self.assertContains(response, "Switch task")
+
+    def test_editing_past_entry_returns_to_its_week(self):
+        interval = Interval.objects.create(
+            project="A", start=local(2020, 3, 4, 9), end=local(2020, 3, 4, 10)
+        )
+        response = self.client.post(
+            reverse("timetrack:edit", args=[interval.id]),
+            {"project": "B", "start": "2020-03-04T09:00", "end": "2020-03-04T10:00"},
+        )
+        self.assertRedirects(response, reverse("timetrack:week", args=["2020-03-02"]))
 
     def test_recent_tasks_offered_for_quick_start(self):
         Interval.objects.create(

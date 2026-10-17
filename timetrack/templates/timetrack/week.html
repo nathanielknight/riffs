@@ -1,0 +1,65 @@
+{% extends "timetrack/base.html" %}
+{% load timetrack %}
+
+{% block title %}Week {{ monday|date:"W" }} · Time Tracker{% endblock %}
+
+{% block style %}
+.projects li {
+    grid-template-columns: minmax(0, 1fr) 30% 3.5rem;
+}
+
+.timesheet li {
+    grid-template-columns: minmax(0, 1fr) 3.5rem 3.5rem;
+}
+{% endblock %}
+
+{% block masthead %}
+<a class="label" href="{% url 'timetrack:weeks' %}">← Weeks</a>
+<nav class="weeknav label">
+    <a href="{% url 'timetrack:week' prev_week|date:'Y-m-d' %}">← Prev</a>
+    {% if not is_this_week %}<a href="{% url 'timetrack:index' %}">Today</a>{% endif %}
+    <a href="{% url 'timetrack:week' next_week|date:'Y-m-d' %}">Next →</a>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="section-head">
+    <span class="label">Week {{ monday|date:"W" }}</span>
+</div>
+<div class="weektitle">
+    <h2>{% week_range monday sunday %}</h2>
+    <div class="figure">{% total week_total %}</div>
+</div>
+
+{% if project_totals %}
+<ul class="rows projects">
+    {% for project, project_total in project_totals %}
+    <li>
+        <span>{{ project }}</span>
+        <span class="bar"><span style="width: {% widthratio project_total.duration.total_seconds week_total.duration.total_seconds 100 %}%"></span></span>
+        <span class="num">{% total project_total %}</span>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% for day, day_total, projects in days %}
+<div class="day">
+    <div class="dayhead label">
+        <span>{{ day|date:"l j M" }}</span>
+        <span>{% total day_total %}</span>
+    </div>
+    <ul class="rows timesheet">
+        {% for project, info in projects %}
+        <li>
+            <span>{{ project }}{% if info.notes %}<span class="note muted">{{ info.notes|join:", " }}</span>{% endif %}</span>
+            <span class="num">{% total info.total %}</span>
+            <span class="num muted">{% decimal_hours info.total %}</span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% empty %}
+<p class="muted">Nothing tracked this week.</p>
+{% endfor %}
+{% endblock %}

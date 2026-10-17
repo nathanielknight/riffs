@@ -305,6 +305,74 @@
             color: var(--accent);
         }
 
+        /* Lists of totals */
+        .rows {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .rows li {
+            display: grid;
+            align-items: baseline;
+            gap: 0 1rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--hair);
+        }
+
+        .rows .note {
+            display: block;
+            font-size: 0.875rem;
+        }
+
+        .num {
+            text-align: right;
+        }
+
+        .bar {
+            height: 0.5rem;
+            background: var(--hair);
+            align-self: center;
+        }
+
+        .bar span {
+            display: block;
+            height: 100%;
+            background: var(--fg);
+        }
+
+        .day {
+            margin-top: 2.5rem;
+        }
+
+        .dayhead {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--fg);
+            padding-bottom: 0.35rem;
+        }
+
+        .weektitle {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .weektitle .figure {
+            font-size: clamp(2.5rem, 11vw, 4rem);
+        }
+
+        .weeknav {
+            display: flex;
+            gap: 1.25rem;
+        }
+
+        .weeknav a {
+            text-decoration: none;
+        }
+
         {% block style %}{% endblock %}
     </style>
 </head>
@@ -333,6 +401,22 @@
             {% endfor %}
         </datalist>
     </main>
+    <script>
+    // Keep running durations ticking.
+    (function () {
+        const loaded = Date.now();
+        const live = document.querySelectorAll(".duration[data-live]");
+        if (!live.length) return;
+        function tick() {
+            const extra = Math.floor((Date.now() - loaded) / 1000);
+            for (const el of live) {
+                const minutes = Math.floor((Number(el.dataset.seconds) + extra) / 60);
+                el.textContent = Math.floor(minutes / 60) + ":" + String(minutes % 60).padStart(2, "0");
+            }
+        }
+        setInterval(tick, 15000);
+    })();
+    </script>
 </body>
 
 </html>

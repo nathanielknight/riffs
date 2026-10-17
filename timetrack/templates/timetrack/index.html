@@ -2,16 +2,6 @@
 {% load timetrack %}
 
 {% block style %}
-.stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-.stats .figure {
-    margin-top: 0.5rem;
-}
-
 .dot {
     display: inline-block;
     width: 0.6em;
@@ -28,6 +18,16 @@
 
 @media (prefers-reduced-motion: reduce) {
     .dot { animation: none; }
+}
+
+.masthead .label {
+    font-weight: 400;
+}
+
+.current {
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 0;
 }
 
 .running {
@@ -98,84 +98,20 @@
     color: var(--accent);
 }
 
-.weeknav {
-    display: flex;
-    gap: 1.25rem;
-}
-
-.weeknav a {
-    text-decoration: none;
-}
-
-.weektitle {
-    display: flex;
-    justify-content: space-between;
-    align-items: end;
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.weektitle .figure {
-    font-size: clamp(2.5rem, 11vw, 4rem);
-}
-
-.rows {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.rows li {
-    display: grid;
-    align-items: baseline;
-    gap: 0 1rem;
-    padding: 0.6rem 0;
-    border-bottom: 1px solid var(--hair);
-}
-
-.projects li {
-    grid-template-columns: minmax(0, 1fr) 30% 3.5rem;
-}
-
-.bar {
-    height: 0.5rem;
-    background: var(--hair);
-    align-self: center;
-}
-
-.bar span {
-    display: block;
-    height: 100%;
-    background: var(--fg);
-}
-
-.num {
-    text-align: right;
-}
-
-.day {
-    margin-top: 2.5rem;
-}
-
-.dayhead {
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 2px solid var(--fg);
-    padding-bottom: 0.35rem;
-}
-
 .entries li {
     grid-template-columns: 6.5rem minmax(0, 1fr) 3.5rem 2.5rem;
-}
-
-.entries .note {
-    display: block;
-    font-size: 0.875rem;
 }
 
 .entries .edit {
     font-size: 0.875rem;
     text-align: right;
+}
+
+.links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    margin-top: 2rem;
 }
 
 .actions {
@@ -191,22 +127,11 @@
 {% endblock %}
 
 {% block content %}
-<div class="stats">
-    <div>
-        <div class="label">Today</div>
-        <div class="figure">{% total today_total %}</div>
-    </div>
-    <div>
-        <div class="label">This week</div>
-        <div class="figure">{% total this_week_total %}</div>
-    </div>
-</div>
-
-<section>
-    <div class="section-head">
-        <span class="label">{% if running %}<span class="dot"></span>Running{% else %}Now{% endif %}</span>
-    </div>
+<section class="current">
     {% if running %}
+    <div class="section-head">
+        <span class="label"><span class="dot"></span>Tracking</span>
+    </div>
     <div class="running">
         <div>
             <div class="project">{{ running.project }}</div>
@@ -233,80 +158,27 @@
             <button>Stop</button>
         </form>
     </details>
+    <details>
+        <summary>Switch task</summary>
+        {% include "timetrack/start_controls.html" %}
+    </details>
     {% else %}
-    <p class="muted">Not tracking anything.</p>
-    {% endif %}
-</section>
-
-<section>
     <div class="section-head">
         <span class="label">Start</span>
+        <span class="label muted">Not tracking</span>
     </div>
-    {% if recent_tasks %}
-    <ul class="quickstart">
-        {% for project, note in recent_tasks %}
-        <li>
-            <form method="post" action="{% url 'timetrack:start' %}">
-                {% csrf_token %}
-                <input type="hidden" name="project" value="{{ project }}">
-                <input type="hidden" name="note" value="{{ note }}">
-                {% if running and running.project == project and running.note == note %}
-                <button disabled><span>{{ project }}{% if note %}<span class="note">{{ note }}</span>{% endif %}</span><span class="label">Running</span></button>
-                {% else %}
-                <button><span>{{ project }}{% if note %}<span class="note">{{ note }}</span>{% endif %}</span><span class="label">Start →</span></button>
-                {% endif %}
-            </form>
-        </li>
-        {% endfor %}
-    </ul>
+    {% include "timetrack/start_controls.html" %}
     {% endif %}
-    <details {% if not recent_tasks %}open{% endif %}>
-        <summary>New project</summary>
-        <form method="post" action="{% url 'timetrack:start' %}" class="stack">
-            {% csrf_token %}
-            <div>
-                <label for="start-project">Project</label>
-                <input type="text" name="project" id="start-project" list="projects" required>
-            </div>
-            <div>
-                <label for="start-note">Note</label>
-                <input type="text" name="note" id="start-note" placeholder="Optional">
-            </div>
-            <div>
-                <label for="start-start">Started at</label>
-                <input type="datetime-local" step="300" name="start" id="start-start">
-                <span class="helptext">Leave blank for now.</span>
-            </div>
-            <button>Start</button>
-        </form>
-    </details>
 </section>
 
 <section>
     <div class="section-head">
-        <span class="label">Week {{ monday|date:"W" }}</span>
-        <nav class="weeknav label">
-            <a href="?week={{ prev_week|date:'Y-m-d' }}">← Prev</a>
-            {% if not is_this_week %}<a href="{% url 'timetrack:index' %}">Today</a>{% endif %}
-            <a href="?week={{ next_week|date:'Y-m-d' }}">Next →</a>
-        </nav>
+        <span class="label">This week</span>
     </div>
     <div class="weektitle">
-        <h2>{% if monday.month == sunday.month %}{{ monday|date:"j" }}{% else %}{{ monday|date:"j M" }} {% endif %}–{% if monday.month != sunday.month %} {% endif %}{{ sunday|date:"j M Y" }}</h2>
+        <h2>{% week_range monday sunday %}</h2>
         <div class="figure">{% total week_total %}</div>
     </div>
-
-    {% if project_totals %}
-    <ul class="rows projects">
-        {% for project, project_total in project_totals %}
-        <li>
-            <span>{{ project }}</span>
-            <span class="bar"><span style="width: {% widthratio project_total.duration.total_seconds week_total.duration.total_seconds 100 %}%"></span></span>
-            <span class="num">{% total project_total %}</span>
-        </li>
-        {% endfor %}
-    </ul>
-    {% endif %}
 
     {% for day, info in days %}
     <div class="day">
@@ -329,7 +201,11 @@
     <p class="muted">Nothing tracked this week.</p>
     {% endfor %}
 
-    <p style="margin-top: 2rem"><a href="{% url 'timetrack:add' %}">Add a past entry</a></p>
+    <p class="links">
+        <a href="{% url 'timetrack:add' %}">Add a past entry</a>
+        <a href="{% url 'timetrack:week' monday|date:'Y-m-d' %}">Timesheet for this week</a>
+        <a href="{% url 'timetrack:weeks' %}">Past weeks →</a>
+    </p>
 </section>
 
 <section>
@@ -358,21 +234,6 @@
 
 {{ vapid_public_key|json_script:"vapid-public-key" }}
 <script>
-    // Keep running durations ticking.
-    (function () {
-        const loaded = Date.now();
-        const live = document.querySelectorAll(".duration[data-live]");
-        if (!live.length) return;
-        function tick() {
-            const extra = Math.floor((Date.now() - loaded) / 1000);
-            for (const el of live) {
-                const minutes = Math.floor((Number(el.dataset.seconds) + extra) / 60);
-                el.textContent = Math.floor(minutes / 60) + ":" + String(minutes % 60).padStart(2, "0");
-            }
-        }
-        setInterval(tick, 15000);
-    })();
-
     // Push notification subscription.
     (function () {
         const status = document.getElementById("push-status");

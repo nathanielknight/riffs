@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Max
-from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -75,13 +75,6 @@ class Total:
         self.live = self.live or interval.is_running
 
 
-def total_between(start, end, now):
-    total = Total()
-    for interval in Interval.objects.filter(start__gte=start, start__lt=end):
-        total.add(interval, now)
-    return total
-
-
 def recent_tasks():
     """Recently used (project, note) pairs, most recent first."""
     return [
@@ -103,32 +96,33 @@ def parse_local_datetime(value):
     return timezone.make_aware(naive)
 
 
+def week_intervals(monday, tz):
+    return Interval.objects.filter(
+        start__gte=day_start(monday, tz),
+        start__lt=day_start(monday + datetime.timedelta(days=7), tz),
+    ).order_by("start")
+
+
+def week_context(monday):
+    return {
+        "monday": monday,
+        "sunday": monday + datetime.timedelta(days=6),
+    }
+
+
 @login_required
 def index(request):
     tz = activate_local_tz(request)
     now = timezone.now()
-    today = timezone.localdate(now)
-    this_monday = week_monday(today)
-
-    try:
-        selected = datetime.date.fromisoformat(request.GET.get("week", ""))
-    except ValueError:
-        selected = today
-    monday = week_monday(selected)
-    week_start = day_start(monday, tz)
-    week_end = day_start(monday + datetime.timedelta(days=7), tz)
+    monday = week_monday(timezone.localdate(now))
 
     days = defaultdict(lambda: {"intervals": [], "total": Total()})
     week_total = Total()
-    project_totals = defaultdict(Total)
-    for interval in Interval.objects.filter(
-        start__gte=week_start, start__lt=week_end
-    ).order_by("-start"):
+    for interval in week_intervals(monday, tz).reverse():
         day = days[timezone.localdate(interval.start)]
         day["intervals"].append(interval)
         day["total"].add(interval, now)
         week_total.add(interval, now)
-        project_totals[interval.project].add(interval, now)
 
     context = {
         "now": now,
@@ -137,31 +131,82 @@ def index(request):
         "all_projects": Interval.objects.values_list("project", flat=True)
         .distinct()
         .order_by("project"),
-        "today_total": total_between(
-            day_start(today, tz),
-            day_start(today + datetime.timedelta(days=1), tz),
-            now,
-        ),
-        "this_week_total": total_between(
-            day_start(this_monday, tz),
-            day_start(this_monday + datetime.timedelta(days=7), tz),
-            now,
-        ),
-        "monday": monday,
-        "sunday": monday + datetime.timedelta(days=6),
-        "is_this_week": monday == this_monday,
-        "prev_week": monday - datetime.timedelta(days=7),
-        "next_week": monday + datetime.timedelta(days=7),
+        **week_context(monday),
         "days": sorted(days.items(), reverse=True),
         "week_total": week_total,
-        "project_totals": sorted(
-            project_totals.items(), key=lambda item: item[1].duration, reverse=True
-        ),
         "time_zone": str(tz),
         "vapid_public_key": push.public_key(),
         "push_device_count": PushSubscription.objects.count(),
     }
     return render(request, "timetrack/index.html", context)
+
+
+@login_required
+def weeks(request):
+    activate_local_tz(request)
+    now = timezone.now()
+    totals = defaultdict(Total)
+    # Weeks belong to their ISO year, matching the week numbers shown.
+    year_totals = defaultdict(Total)
+    for interval in Interval.objects.all():
+        monday = week_monday(timezone.localdate(interval.start))
+        totals[monday].add(interval, now)
+        year_totals[monday.isocalendar().year].add(interval, now)
+    years = {
+        year: {"year": year, "total": total, "weeks": []}
+        for year, total in sorted(year_totals.items(), reverse=True)
+    }
+    for monday, total in sorted(totals.items(), reverse=True):
+        years[monday.isocalendar().year]["weeks"].append(
+            {**week_context(monday), "total": total}
+        )
+    context = {"years": list(years.values())}
+    return render(request, "timetrack/weeks.html", context)
+
+
+@login_required
+def week(request, date):
+    tz = activate_local_tz(request)
+    now = timezone.now()
+    try:
+        monday = week_monday(datetime.date.fromisoformat(date))
+    except ValueError:
+        raise Http404("Not a date")
+
+    # day -> project -> total and the notes worked on, for filling timesheets.
+    days = defaultdict(
+        lambda: {
+            "total": Total(),
+            "projects": defaultdict(lambda: {"total": Total(), "notes": []}),
+        }
+    )
+    week_total = Total()
+    project_totals = defaultdict(Total)
+    for interval in week_intervals(monday, tz):
+        day = days[timezone.localdate(interval.start)]
+        day["total"].add(interval, now)
+        project = day["projects"][interval.project]
+        project["total"].add(interval, now)
+        if interval.note and interval.note not in project["notes"]:
+            project["notes"].append(interval.note)
+        week_total.add(interval, now)
+        project_totals[interval.project].add(interval, now)
+
+    context = {
+        **week_context(monday),
+        "is_this_week": monday == week_monday(timezone.localdate(now)),
+        "prev_week": monday - datetime.timedelta(days=7),
+        "next_week": monday + datetime.timedelta(days=7),
+        "days": [
+            (day, info["total"], sorted(info["projects"].items()))
+            for day, info in sorted(days.items())
+        ],
+        "week_total": week_total,
+        "project_totals": sorted(
+            project_totals.items(), key=lambda item: item[1].duration, reverse=True
+        ),
+    }
+    return render(request, "timetrack/week.html", context)
 
 
 @login_required
@@ -203,8 +248,11 @@ def stop(request):
 
 
 def _week_url(interval):
-    week = timezone.localdate(interval.start)
-    return reverse("timetrack:index") + f"?week={week_monday(week).isoformat()}"
+    """Where to return after changing an interval: its week's page, if past."""
+    monday = week_monday(timezone.localdate(interval.start))
+    if monday == week_monday(timezone.localdate()):
+        return reverse("timetrack:index")
+    return reverse("timetrack:week", args=[monday.isoformat()])
 
 
 def _interval_form_view(request, interval):

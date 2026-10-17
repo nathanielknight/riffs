@@ -1,4 +1,5 @@
 from django import template
+from django.utils import dateformat
 from django.utils.html import format_html
 
 register = template.Library()
@@ -24,3 +25,22 @@ def duration(value, live=False):
 @register.simple_tag
 def total(value):
     return duration(value.duration, value.live)
+
+
+@register.simple_tag
+def decimal_hours(value):
+    """Render a total as decimal hours (e.g. 5.25), as timesheets want."""
+    return f"{value.duration.total_seconds() / 3600:.2f}"
+
+
+@register.simple_tag
+def week_range(monday, sunday):
+    """Render a week as e.g. "12–18 Oct 2026" or "28 Sep – 4 Oct 2026"."""
+    if monday.month == sunday.month:
+        first = "j"
+    elif monday.year == sunday.year:
+        first = "j M"
+    else:
+        first = "j M Y"
+    sep = "–" if first == "j" else " – "
+    return dateformat.format(monday, first) + sep + dateformat.format(sunday, "j M Y")
