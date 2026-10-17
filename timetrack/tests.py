@@ -159,6 +159,7 @@ class TimetrackViewTests(TestCase):
         )
         self.assertEqual(projects["Acme"]["notes"], ["Standup"])
         self.assertContains(response, "3:30")
+        self.assertContains(response, '<span class="num muted">0.50</span>')
 
     def test_week_view_rejects_bad_date(self):
         response = self.client.get(reverse("timetrack:week", args=["nope"]))
@@ -166,13 +167,36 @@ class TimetrackViewTests(TestCase):
 
     def test_weeks_list(self):
         self.make_week()
+        # ISO week 1 of 2026 starts on Monday 2025-12-29.
+        Interval.objects.create(
+            project="Acme", start=local(2025, 12, 30, 9), end=local(2025, 12, 30, 10)
+        )
+        Interval.objects.create(
+            project="Acme", start=local(2025, 6, 2, 9), end=local(2025, 6, 2, 11)
+        )
         response = self.client.get(reverse("timetrack:weeks"))
-        weeks = [(w["monday"], w["total"].duration) for w in response.context["weeks"]]
+        years = [
+            (
+                y["year"],
+                y["total"].duration,
+                [(w["monday"], w["total"].duration) for w in y["weeks"]],
+            )
+            for y in response.context["years"]
+        ]
+        hours = datetime.timedelta(hours=1)
         self.assertEqual(
-            weeks,
+            years,
             [
-                (datetime.date(2026, 10, 12), datetime.timedelta(hours=3, minutes=30)),
-                (datetime.date(2026, 10, 5), datetime.timedelta(hours=1)),
+                (
+                    2026,
+                    5.5 * hours,
+                    [
+                        (datetime.date(2026, 10, 12), 3.5 * hours),
+                        (datetime.date(2026, 10, 5), hours),
+                        (datetime.date(2025, 12, 29), hours),
+                    ],
+                ),
+                (2025, 2 * hours, [(datetime.date(2025, 6, 2), 2 * hours)]),
             ],
         )
         self.assertContains(response, reverse("timetrack:week", args=["2026-10-12"]))

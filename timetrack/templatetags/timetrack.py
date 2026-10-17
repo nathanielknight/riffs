@@ -28,6 +28,12 @@ def total(value):
 
 
 @register.simple_tag
+def decimal_hours(value):
+    """Render a total as decimal hours (e.g. 5.25), as timesheets want."""
+    return f"{value.duration.total_seconds() / 3600:.2f}"
+
+
+@register.simple_tag
 def week_range(monday, sunday):
     """Render a week as e.g. "12–18 Oct 2026" or "28 Sep – 4 Oct 2026"."""
     if monday.month == sunday.month:

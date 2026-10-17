@@ -146,14 +146,21 @@ def weeks(request):
     activate_local_tz(request)
     now = timezone.now()
     totals = defaultdict(Total)
+    # Weeks belong to their ISO year, matching the week numbers shown.
+    year_totals = defaultdict(Total)
     for interval in Interval.objects.all():
-        totals[week_monday(timezone.localdate(interval.start))].add(interval, now)
-    context = {
-        "weeks": [
-            {**week_context(monday), "total": total}
-            for monday, total in sorted(totals.items(), reverse=True)
-        ],
+        monday = week_monday(timezone.localdate(interval.start))
+        totals[monday].add(interval, now)
+        year_totals[monday.isocalendar().year].add(interval, now)
+    years = {
+        year: {"year": year, "total": total, "weeks": []}
+        for year, total in sorted(year_totals.items(), reverse=True)
     }
+    for monday, total in sorted(totals.items(), reverse=True):
+        years[monday.isocalendar().year]["weeks"].append(
+            {**week_context(monday), "total": total}
+        )
+    context = {"years": list(years.values())}
     return render(request, "timetrack/weeks.html", context)
 
 
