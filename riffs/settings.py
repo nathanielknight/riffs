@@ -109,6 +109,13 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# Login: @login_required sends anonymous visitors to LOGIN_URL with ?next=
+# set to the page they wanted, and LoginView sends them back afterwards.
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 

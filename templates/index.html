@@ -13,6 +13,14 @@
 {% endfor %}
 </ul>
 
+{% if user.is_authenticated %}
+<form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <p>Logged in as {{ user.get_username }}. <button type="submit">Log out</button></p>
+</form>
+{% else %}
+<p><a href="{% url 'login' %}">Log in</a></p>
+{% endif %}
 
 {% endblock %}
 
