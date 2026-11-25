@@ -16,6 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 from django.urls import path, include
 
 from . import views
@@ -23,6 +24,10 @@ from . import views
 urlpatterns = [
     path("", views.index),
     path("admin/", admin.site.urls),
+    # LoginView only follows ?next= to same-host URLs, so it can't be used as
+    # an open redirect. LogoutView only accepts POST.
+    path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
+    path("accounts/logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("bookmarks/", include("bookmarks.urls", namespace="bookmarks")),
     path("dropfeed/", include("dropfeed.urls", namespace="dropfeed")),
     path("share/", include("fileshare.urls", namespace="fileshare")),

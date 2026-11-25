@@ -74,6 +74,8 @@ def create_bookmark(request):
 
 Public views (like RSS feeds, bookmark index) have no authentication.
 
+Anonymous visitors are redirected to `/accounts/login/?next=<page>` (Django's `LoginView`, template in `templates/registration/login.html`) and returned to `<page>` after logging in. Logout is a POST to `/accounts/logout/`.
+
 ### Django Admin Customization
 
 Each app customizes its admin interface in `admin.py`:
